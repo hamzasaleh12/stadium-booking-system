@@ -66,6 +66,12 @@ public class SecurityConfig{
         customAuthenticationFilter.setFilterProcessesUrl("/api/v1/login");
         http.authorizeHttpRequests(auth ->
                 auth
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
+                        
                         .requestMatchers("/api/v1/login/**", "/api/v1/users/refresh-token/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/stadiums/**").permitAll()
