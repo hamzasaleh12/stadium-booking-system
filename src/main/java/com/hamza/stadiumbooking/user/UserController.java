@@ -3,8 +3,11 @@ package com.hamza.stadiumbooking.user;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,7 +21,8 @@ public class UserController {
 
     @GetMapping
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<Page<UserResponse>> getAllUsers(Pageable pageable) {
+    public ResponseEntity<Page<UserResponse>> getAllUsers(@ParameterObject
+            @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         log.info("Incoming request to get ALL Users | Page: {}", pageable.getPageNumber());
         return ResponseEntity.ok(userService.getAllUsers(pageable));
     }
