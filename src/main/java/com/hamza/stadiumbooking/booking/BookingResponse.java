@@ -5,9 +5,11 @@ import java.time.LocalDateTime;
 public record BookingResponse (
         Long id,
         LocalDateTime startTime,
-        Integer numberOfHours,
+        LocalDateTime endTime,
         Double totalPrice,
         Long stadiumId,
-        Long userId
+        String stadiumName,
+        Long userId,
+        String userName
 ){
 }

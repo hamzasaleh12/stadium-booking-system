@@ -1,83 +1,61 @@
-# 🏟️ Stadium Booking System
+# 🏟️ Stadium Booking System (V2 - Production Ready)
 
-A robust, backend RESTful API built with **Spring Boot** to manage sports stadium bookings. This system handles user management, stadium administration, and complex booking logic with **automatic conflict detection** to prevent overlapping reservations.
+A high-performance, secure backend RESTful API built with **Spring Boot 3.4.2** and **Java 21**.
 
-![Java](https://img.shields.io/badge/Java-17-orange?style=for-the-badge&logo=java)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-3-brightgreen?style=for-the-badge&logo=spring)
-![MySQL](https://img.shields.io/badge/Database-MySQL-blue?style=for-the-badge&logo=mysql)
-![Hibernate](https://img.shields.io/badge/ORM-Hibernate-red?style=for-the-badge)
+![Java](https://img.shields.io/badge/Java-21-orange?style=for-the-badge&logo=java)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4.2-brightgreen?style=for-the-badge&logo=spring)
+![MySQL](https://img.shields.io/badge/MySQL-8-blue?style=for-the-badge&logo=mysql)
+![Redis](https://img.shields.io/badge/Redis-Cache-red?style=for-the-badge&logo=redis)
+![Docker](https://img.shields.io/badge/Docker-Container-blue?style=for-the-badge&logo=docker)
+![JWT](https://img.shields.io/badge/JWT-Secure-black?style=for-the-badge&logo=jsonwebtokens)
 
-> **🚧 Current Status: Phase 1 Completed**
->
-> Please note that this version focuses on demonstrating **Core Business Logic**, **Complex Conflict Handling**, and **REST API Standards**.
->
-> The **Security Layer** (Spring Security, JWT, Password Encryption) is currently **Under Development** and will be implemented in the next major update.
-## 🚀 Key Features
+## 🌟 Advanced Engineering Features
 
-* **User Management:** Register, update profile, and manage user data securely.
-* **Stadium Management:** Administer stadium details, pricing per hour, and ball rental fees.
-* **Smart Booking Logic:**
-    * Create bookings associated with specific users and stadiums.
-    * **Conflict Detection Algorithm:** Automatically rejects any booking request that overlaps with an existing reservation for the same stadium.
-    * Dynamic price calculation based on duration and rental fees.
-* **Robust Error Handling:** Global Exception Handler for clear API responses (e.g., `409 Conflict`, `404 Not Found`).
-* **Clean Architecture:** Usage of **DTO Pattern** (Request/Response records) to separate entities from API layer.
+* **Optimistic Locking:** Managed via `@Version` to handle concurrent bookings.
+* **Security:** Multi-layered security with **JWT** and **Role-Based Access Control (RBAC)**.
+* **Performance:** Redis caching for stadium listings and optimized MySQL queries.
+* **Testing:** Unit tests for Core Services and Repositories using JUnit 5 & Mockito.
 
-## 🛠️ Tech Stack
+## 🔌 API Documentation
 
-* **Core:** Java 17, Spring Boot 3
-* **Database:** MySQL
-* **Data Access:** Spring Data JPA (Hibernate)
-* **Tools:** Maven, Lombok, Postman (for testing)
+### 1. Authentication & Identity
+| Method | Endpoint | Access | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/v1/login` | Public | Login & Get JWT Token |
+| `POST` | `/api/v1/auth/refresh-token` | Public | Get new Access Token |
+| `POST` | `/api/v1/users` | Public | Register new Player |
 
-## 🔌 API Endpoints
+### 2. User Management
+| Method | Endpoint | Access | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/v1/users` | `ADMIN` | List all users (Paginated) |
+| `GET` | `/api/v1/users/{id}` | `ADMIN` or `OWNER` | Get specific user details |
+| `PUT` | `/api/v1/users/{id}` | `ADMIN` or `OWNER` | Update profile data |
+| `DELETE` | `/api/v1/users/{id}` | `ADMIN` or `OWNER` | Soft delete user |
+| `PUT` | `/api/v1/users/{id}/role` | `ADMIN` | Change user role |
 
-### 1. Users (`/api/v1/users`)
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `/` | Register a new user |
-| `GET` | `/` | Get all users |
-| `GET` | `/{id}` | Get user by ID |
-| `PUT` | `/{id}` | Update user details (Body: JSON) |
-| `DELETE` | `/{id}` | Delete a user |
-
-### 2. Stadiums (`/api/v1/stadiums`)
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `/` | Add a new stadium |
-| `GET` | `/` | List all stadiums |
-| `PUT` | `/{id}` | Update stadium info (Body: JSON) |
-| `DELETE` | `/{id}` | Delete a stadium |
-
-### 3. Bookings (`/api/v1/bookings`)
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `/` | Create a booking **(Checks for conflicts)** |
-| `GET` | `/` | Get all bookings |
-| `PUT` | `/{id}` | Update booking time/details |
-| `DELETE` | `/{id}` | Cancel a booking |
-
-## 🏗️ Project Structure
-
-The project follows a **Package-by-Feature** structure for better maintainability:
-
-```text
-src/main/java/com/hamza/stadiumbooking
-├── booking       # Booking Controller, Service, Repository, Entity, DTOs
-├── stadium       # Stadium Controller, Service, Repository, Entity, DTOs
-├── user          # User Controller, Service, Repository, Entity, DTOs
-├── exception     # Global Exception Handling Logic
-└── StadiumBookingSystemApplication.java
-```
-🔜 Future Improvements (Roadmap)
-------------------------------------------------------------
-[ ] Security Layer: Implementing Spring Security & JWT for authentication and authorization.
-[ ] Password Encryption: Using BCrypt to hash passwords.
-[ ] Unit Testing: Adding JUnit and Mockito tests.
-[ ] Docker: Containerizing the application for easy deployment.
+### 3. Stadiums & Bookings
+| Method | Endpoint | Access | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/v1/stadiums` | Public | List stadiums (Cached) |
+| `POST` | `/api/v1/stadiums` | `ADMIN / MANAGER` | Add new stadium |
+| `POST` | `/api/v1/bookings` | `PLAYER` | Create booking (Conflict Check) |
+| `GET` | `/api/v1/bookings/my-bookings` | `PLAYER` | View personal booking history |
 
 
-👨‍💻 Author
-------------------------------------------------------------
-Name:    Hamza Saleh
-Profile: [https://github.com/hamzasaleh12](https://github.com/hamzasaleh12)
+The API will be available at http://localhost:8082.
+
+👨‍💻 Connect with Me
+
+GitHub: https://github.com/hamzasaleh12/stadium-booking-system
+
+LinkedIn: https://www.linkedin.com/in/hamza-saleh-908662392/
+
+## 📦 Local Deployment (Docker)
+
+```bash
+# Clone the repository
+git clone [https://github.com/hamzasaleh12/stadium-booking.git](https://github.com/hamzasaleh12/stadium-booking.git)
+
+# Run the entire stack
+docker-compose up --build

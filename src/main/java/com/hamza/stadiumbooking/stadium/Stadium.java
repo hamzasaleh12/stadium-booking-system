@@ -1,15 +1,15 @@
 package com.hamza.stadiumbooking.stadium;
 
 import com.hamza.stadiumbooking.booking.Booking;
+import com.hamza.stadiumbooking.user.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+
 import java.util.List;
 
+@Builder
 @Entity
-@Table(name = "stadiums") // يفضل تسمية الجدول صراحة
+@Table(name = "stadiums")
 @Setter
 @Getter
 @AllArgsConstructor
@@ -18,6 +18,9 @@ public class Stadium {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Version
+    private Long version;
 
     @Column(nullable = false)
     private String name;
@@ -38,6 +41,14 @@ public class Stadium {
     @Column(nullable = false)
     private Integer ballRentalFee = 0;
 
-    @OneToMany(mappedBy = "stadium", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ManyToOne // لأن الملعب له مالك واحد (User)
+    @JoinColumn(name = "owner_id",nullable = false)
+    private User owner;
+
+    @OneToMany(mappedBy = "stadium", fetch = FetchType.LAZY)
     private List<Booking> bookings;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean isDeleted = false;
 }

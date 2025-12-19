@@ -5,6 +5,7 @@ public record UserResponse(
         String name,
         String email,
         String phoneNumber,
-        Role role
+        Role role,
+        Integer age
 ) {
 }
