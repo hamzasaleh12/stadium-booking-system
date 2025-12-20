@@ -64,6 +64,7 @@ public class SecurityConfig{
 
         CustomAuthenticationFilter customAuthenticationFilter = new CustomAuthenticationFilter(authenticationManager, utils);
         customAuthenticationFilter.setFilterProcessesUrl("/api/v1/login");
+
         http.authorizeHttpRequests(auth ->
                 auth
                         .requestMatchers(
@@ -71,22 +72,19 @@ public class SecurityConfig{
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
-
                         .requestMatchers("/api/v1/login/**", "/api/v1/auth/refresh-token/**").permitAll()
-                        .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/", "/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/stadiums/**").permitAll()
-
                         .requestMatchers(HttpMethod.POST, "/api/v1/stadiums/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/stadiums/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/stadiums/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
-
                         .requestMatchers(HttpMethod.POST, "/api/v1/bookings/**").hasAuthority("ROLE_PLAYER")
                         .requestMatchers(HttpMethod.GET, "/api/v1/bookings/my-bookings").hasAuthority("ROLE_PLAYER")
                         .requestMatchers(HttpMethod.GET, "/api/v1/bookings/**").hasAnyAuthority("ROLE_MANAGER", "ROLE_ADMIN")
-
                         .anyRequest().authenticated()
         );
+
         http.addFilter(customAuthenticationFilter);
         http.addFilterBefore(new JwtAuthorizationFilter(utils, exceptionResolver), UsernamePasswordAuthenticationFilter.class);
         return http.build();
