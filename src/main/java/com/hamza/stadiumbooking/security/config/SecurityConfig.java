@@ -72,7 +72,8 @@ public class SecurityConfig{
                                 "/swagger-ui.html"
                         ).permitAll()
 
-                        .requestMatchers("/api/v1/login/**", "/api/v1/users/refresh-token/**").permitAll()
+                        .requestMatchers("/api/v1/login/**", "/api/v1/auth/refresh-token/**").permitAll()
+                        .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/stadiums/**").permitAll()
 

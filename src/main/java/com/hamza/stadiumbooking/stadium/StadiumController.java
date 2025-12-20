@@ -3,8 +3,11 @@ package com.hamza.stadiumbooking.stadium;
 import com.hamza.stadiumbooking.security.utils.OwnershipValidationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,7 +25,8 @@ public class StadiumController {
     private final OwnershipValidationService ownershipValidationService;
 
     @GetMapping
-    public ResponseEntity<Page<StadiumResponse>> getAllStadiums(Pageable pageable) {
+    public ResponseEntity<Page<StadiumResponse>> getAllStadiums(@ParameterObject
+        @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable){
         log.info("Incoming request to get all stadiums | Page: {}", pageable.getPageNumber());
         return ResponseEntity.ok(stadiumService.getAllStadiums(pageable));
     }

@@ -3,8 +3,11 @@ package com.hamza.stadiumbooking.booking;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,21 +22,24 @@ public class BookingController {
 
     @GetMapping
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public Page<BookingResponse> getAdminGlobalBookings(Pageable pageable){
+    public Page<BookingResponse> getAdminGlobalBookings(@ParameterObject
+    @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable){
         log.info("Incoming request to get ALL global bookings (Admin View)");
         return bookingService.getAllBookings(pageable,null, null);
     }
 
     @GetMapping("/stadiums/{stadiumId}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_MANAGER')")
-    public Page<BookingResponse> getAllBookings(Pageable pageable,@PathVariable Long stadiumId){
+    public Page<BookingResponse> getAllBookings(@ParameterObject
+    @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable,@PathVariable Long stadiumId){
         log.info("Incoming request to get bookings for Stadium ID: {}", stadiumId);
         return bookingService.getAllBookings(pageable,stadiumId,null);
     }
 
     @GetMapping("/my-bookings")
     @PreAuthorize("hasAuthority('ROLE_PLAYER')")
-    public ResponseEntity<Page<BookingResponse>> getMyBookings(Pageable pageable) {
+    public ResponseEntity<Page<BookingResponse>> getMyBookings(@ParameterObject
+    @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         log.info("Incoming request to get My Bookings (Player View)");
         return ResponseEntity.ok(bookingService.getMyBookings(pageable));
     }

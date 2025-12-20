@@ -30,6 +30,11 @@ src/main/java/com/hamza/stadiumbooking
 └── common        # Global Exception Handling & DTOs
 ```
 
+## 🔗 Live Demo & Docs
+- **Swagger UI (Live):** https://empowering-enchantment-production-6f7a.up.railway.app/swagger-ui/index.html#/
+- **Base URL (Railway):** https://empowering-enchantment-production-6f7a.up.railway.app
+- **Health Check:** https://empowering-enchantment-production-6f7a.up.railway.app/actuator/health
+
 ## 🔌 API Documentation
 
 ### 1. Authentication & Identity
@@ -56,29 +61,52 @@ src/main/java/com/hamza/stadiumbooking
 | `GET` | `/api/v1/bookings/my-bookings` | `PLAYER` | View personal booking history |
 
 ## ⚙️ Environment Variables
-To run this project, you need to configure the following variables:
-`MYSQLHOST`, `MYSQLPORT`, `MYSQLDATABASE`, `MYSQLUSER`, `MYSQLPASSWORD`, `REDISHOST`, `REDISPORT`, `JWT_SECRET`.
+To run the project, set the following variables (locally or on Railway/Docker):
+```
+PORT=8082
+MYSQLHOST=...
+MYSQLPORT=...
+MYSQLDATABASE=...
+MYSQLUSER=...
+MYSQLPASSWORD=...
+REDISHOST=...
+REDISPORT=...
+REDISPASSWORD=...
+JWT_SECRET=...
+```
+
+Example:
+```bash
+export PORT=8082
+export MYSQLHOST=localhost
+export MYSQLPORT=3306
+export MYSQLDATABASE=stadium_db
+export MYSQLUSER=root
+export MYSQLPASSWORD=secret
+export REDISHOST=localhost
+export REDISPORT=6379
+export REDISPASSWORD=
+export JWT_SECRET=change-me
+```
+
+## 🚀 Quick Start (Local)
+```bash
+# Build
+mvn clean package -DskipTests
+
+# Run
+java -jar target/*.jar
+```
 
 ## 📦 Local Deployment (Docker)
-
-To run the entire stack (App, MySQL, Redis) on your machine, ensure you have Docker installed and run:
-
 ```bash
-# Clone the repository
-git clone https://github.com/hamzasaleh12/stadium-booking-system.git
-
-# Enter the directory
-cd stadium-booking-system
-
-# Run the entire stack
-docker-compose up --build
-
+docker build -t stadium-booking .
+docker run -p 8082:8082 --env-file .env stadium-booking
 ```
 
 The API will be available at http://localhost:8082.
 
 👨‍💻 Connect with Me
 
-GitHub: https://github.com/hamzasaleh12/stadium-booking-system
-
+GitHub: https://github.com/hamzasaleh12  
 LinkedIn: https://www.linkedin.com/in/hamza-saleh-908662392/
