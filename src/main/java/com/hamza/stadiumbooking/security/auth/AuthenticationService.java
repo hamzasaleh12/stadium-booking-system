@@ -1,6 +1,7 @@
 package com.hamza.stadiumbooking.security.auth;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.hamza.stadiumbooking.exception.ResourceNotFoundException;
 import com.hamza.stadiumbooking.security.jwt.JwtUtils;
 import com.hamza.stadiumbooking.user.User;
 import com.hamza.stadiumbooking.user.UserRepository;
@@ -20,7 +21,7 @@ public class AuthenticationService {
         DecodedJWT decodedJWT = jwtUtils.decodedJWT(request.token());
         String email = decodedJWT.getSubject();
         User user = userRepository.findByEmailAndIsDeletedFalse(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         List<String> roles = List.of(user.getRole().name());
         String newAccessToken = jwtUtils.createAccessToken(

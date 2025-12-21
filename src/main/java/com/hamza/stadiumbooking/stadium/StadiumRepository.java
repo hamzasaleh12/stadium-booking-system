@@ -16,6 +16,6 @@ public interface StadiumRepository extends JpaRepository<Stadium,Long> {
 
     boolean existsByIdAndOwner_Id(Long id, Long owner_id);
 
-    @Query("SELECT DISTINCT s.location FROM Stadium s")
+    @Query("SELECT DISTINCT s.location FROM Stadium s WHERE s.isDeleted = false")
     List<String> findAllDistinctLocations();
 }

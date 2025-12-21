@@ -113,7 +113,7 @@ public class UserService{
             int age = Period.between(request.dob(), LocalDate.now()).getYears();
             if (age < 5) {
                 log.warn("Action: updateUser | Validation Failed | Age {} is too young for User ID: {}", age, userId);
-                throw new IllegalArgumentException("عفواً، السن لازم يكون 5 سنين على الأقل.");
+                throw new IllegalArgumentException("Age must be at least 5 years");
             }
             user.setDob(request.dob());
         }

@@ -41,7 +41,7 @@ public class Stadium {
     @Column(nullable = false)
     private Integer ballRentalFee = 0;
 
-    @ManyToOne // لأن الملعب له مالك واحد (User)
+    @ManyToOne
     @JoinColumn(name = "owner_id",nullable = false)
     private User owner;
 

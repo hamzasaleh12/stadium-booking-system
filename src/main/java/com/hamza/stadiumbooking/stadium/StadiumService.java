@@ -22,9 +22,8 @@ public class StadiumService {
     private final UserRepository userRepository;
     private final OwnershipValidationService ownershipValidationService;
 
-    @Cacheable(value = "stadiums")
     public Page<StadiumResponse> getAllStadiums(Pageable pageable) {
-        log.info("Action: getAllStadiums | Fetching stadiums from database (Cache Miss)");
+        log.info("Action: getAllStadiums | Fetching stadiums from database");
         return stadiumRepository.findAllByIsDeletedFalse(pageable).map(this::mapToDto);
     }
 
@@ -51,12 +50,16 @@ public class StadiumService {
                 () -> new ResourceNotFoundException("Stadium linked to booking not found: " + id));
     }
 
-    @CacheEvict(value = {"stadiums", "locations"}, allEntries = true)
+    @CacheEvict(value = {"locations"}, allEntries = true)
     public StadiumResponse addStadium(StadiumRequest request) {
         log.info("Action: addStadium | Attempting to add new stadium: {}", request.name());
         Stadium stadium = mapToEntity(request);
 
         Long managerId = ownershipValidationService.getCurrentUserId();
+        if (managerId == null) {
+            log.error("Action: addStadium | Error: Current user ID is null");
+            throw new IllegalStateException("Error: Unable to determine the current user. User not authenticated.");
+        }
         User manger = userRepository.findByIdAndIsDeletedFalse(managerId).orElseThrow(
                 () -> {
                     log.error("Action: addStadium | Error: Manager ID {} not found", managerId);
@@ -72,7 +75,7 @@ public class StadiumService {
     }
 
     @Transactional
-    @CacheEvict(value = {"stadiums", "locations"}, allEntries = true)
+    @CacheEvict(value = {"locations"}, allEntries = true)
     public void deleteStadium(Long stadiumId) {
         log.info("Action: deleteStadium | Attempting to soft-delete stadium ID: {}", stadiumId);
         Stadium stadium = stadiumRepository.findByIdAndIsDeletedFalse(stadiumId).orElseThrow(
@@ -87,7 +90,7 @@ public class StadiumService {
     }
 
     @Transactional
-    @CacheEvict(value = {"stadiums", "locations"}, allEntries = true)
+    @CacheEvict(value = {"locations"}, allEntries = true)
     public StadiumResponse updateStadium(Long id, StadiumRequestForUpdate request) {
         log.info("Action: updateStadium | Attempting to update stadium ID: {}", id);
         Stadium stadium = stadiumRepository.findByIdAndIsDeletedFalse(id).orElseThrow(

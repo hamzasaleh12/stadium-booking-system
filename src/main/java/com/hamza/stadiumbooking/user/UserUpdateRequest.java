@@ -1,6 +1,7 @@
 package com.hamza.stadiumbooking.user;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
@@ -25,7 +26,6 @@ public record UserUpdateRequest(
                 message = "Password must contain at least one digit, one lowercase, one uppercase, and one special character."
         )
         String password,
-
         LocalDate dob
 ) {
 }
