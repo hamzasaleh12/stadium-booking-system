@@ -1,6 +1,7 @@
 package com.hamza.stadiumbooking.welcome;
 
 import io.swagger.v3.oas.annotations.Hidden;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -8,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Hidden
 public class WelcomeController {
 
-    @GetMapping("/")
+    @GetMapping(value = "/", produces = MediaType.TEXT_HTML_VALUE)
     public String welcome() {
         return """
                 <!DOCTYPE html>
@@ -34,12 +35,12 @@ public class WelcomeController {
                             border-radius: 15px;
                             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
                             text-align: center;
-                            max-width: 500px;
+                            max-width: 520px;
                             width: 90%;
                         }
                         h1 { color: #1e3c72; margin-bottom: 10px; }
-                        p { color: #666; margin-bottom: 30px; }
-                        .btn-group { display: flex; flex-direction: column; gap: 15px; }
+                        p { color: #666; margin-bottom: 20px; }
+                        .btn-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
                         .btn {
                             text-decoration: none;
                             padding: 12px 25px;
@@ -52,23 +53,36 @@ public class WelcomeController {
                         .btn-swagger:hover { background-color: #74ce27; transform: translateY(-2px); }
                         .btn-health { background-color: #f4f4f4; color: #555; }
                         .btn-health:hover { background-color: #e2e2e2; }
-                        footer { margin-top: 30px; font-size: 0.8em; color: #aaa; }
+                        .creds { background: #f7f9fc; border-radius: 10px; padding: 14px; font-size: 0.95em; color: #444; }
+                        .creds h3 { margin: 0 0 8px 0; color: #1e3c72; }
+                        .creds ul { list-style: none; padding: 0; margin: 0; }
+                        .creds li { margin: 4px 0; }
+                        footer { margin-top: 22px; font-size: 0.8em; color: #aaa; }
                     </style>
                 </head>
                 <body>
                     <div class="container">
                         <h1>Stadium Booking API 🚀</h1>
-                        <p>Welcome, Hamza! Your backend service is running successfully on Railway.</p>
-               
+                        <p>Welcome, The backend service is running successfully on Railway.</p>
+
                         <div class="btn-group">
                             <a href="/swagger-ui/index.html" class="btn btn-swagger">Explore API Docs (Swagger)</a>
                             <a href="/actuator/health" class="btn btn-health">Check System Health</a>
+                        </div>
+
+                        <div class="creds">
+                            <h3>Test Accounts (Swagger)</h3>
+                            <ul>
+                                <li>Admin: admin@gmail.com / Admin@1234</li>
+                                <li>Manager: manager@gmail.com / Manager@1234</li>
+                                <li>Player: player@gmail.com / Player@1234</li>
+                            </ul>
                         </div>
 
                         <footer>Developed by Hamza Saleh &copy; 2025</footer>
                     </div>
                 </body>
                 </html>
-               \s""";
+                """;
     }
 }

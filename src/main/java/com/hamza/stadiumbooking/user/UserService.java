@@ -10,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.Optional;
 
 
@@ -48,6 +50,10 @@ public class UserService{
         if (isPresent) {
             log.warn("Action: addUser | Failure | Email already exists: {}", userRequest.email());
             throw new EmailTakenException("Email is already taken: " + userRequest.email());
+        }
+        int age = Period.between(userRequest.dob(), LocalDate.now()).getYears();
+        if (age < 5) {
+            throw new IllegalArgumentException("the age must be at least 5 years to register.");
         }
         User newUser = mapToEntity(userRequest);
         newUser.setPassword(passwordEncoder.encode(userRequest.password()));
@@ -104,6 +110,11 @@ public class UserService{
         }
 
         if (request.dob() != null) {
+            int age = Period.between(request.dob(), LocalDate.now()).getYears();
+            if (age < 5) {
+                log.warn("Action: updateUser | Validation Failed | Age {} is too young for User ID: {}", age, userId);
+                throw new IllegalArgumentException("عفواً، السن لازم يكون 5 سنين على الأقل.");
+            }
             user.setDob(request.dob());
         }
 
@@ -120,7 +131,7 @@ public class UserService{
                 });
 
         try {
-            user.setRole(Role.valueOf(newRoleAsString.toUpperCase()));
+            user.setRole(Role.valueOf(newRoleAsString.trim().toUpperCase()));
         } catch (IllegalArgumentException e) {
             log.error("Action: changeUserRole | Failure | Invalid Role: {}", newRoleAsString);
             throw new IllegalArgumentException("Invalid Role: " + newRoleAsString);

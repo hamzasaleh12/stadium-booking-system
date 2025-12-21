@@ -37,7 +37,7 @@ public class BookingController {
     }
 
     @GetMapping("/my-bookings")
-    @PreAuthorize("hasAuthority('ROLE_PLAYER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_PLAYER','ROLE_ADMIN')")
     public ResponseEntity<Page<BookingResponse>> getMyBookings(@ParameterObject
     @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         log.info("Incoming request to get My Bookings (Player View)");
@@ -53,7 +53,7 @@ public class BookingController {
 
 
     @PostMapping
-    @PreAuthorize("hasAuthority('ROLE_PLAYER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_PLAYER','ROLE_ADMIN')")
     public ResponseEntity<BookingResponse> addBooking(@RequestBody @Valid BookingRequest bookingRequest){
         log.info("Incoming request to create booking for Stadium ID: {} at {}", bookingRequest.stadiumId(), bookingRequest.startTime());
         BookingResponse bookingResponse = bookingService.addBooking(bookingRequest);

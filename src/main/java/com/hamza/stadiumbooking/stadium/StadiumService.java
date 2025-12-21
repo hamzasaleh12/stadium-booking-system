@@ -11,8 +11,6 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,8 +23,7 @@ public class StadiumService {
     private final OwnershipValidationService ownershipValidationService;
 
     @Cacheable(value = "stadiums")
-    public Page<StadiumResponse> getAllStadiums(
-            @PageableDefault(size = 10, sort = {"id"}, direction = Sort.Direction.DESC) Pageable pageable) {
+    public Page<StadiumResponse> getAllStadiums(Pageable pageable) {
         log.info("Action: getAllStadiums | Fetching stadiums from database (Cache Miss)");
         return stadiumRepository.findAllByIsDeletedFalse(pageable).map(this::mapToDto);
     }

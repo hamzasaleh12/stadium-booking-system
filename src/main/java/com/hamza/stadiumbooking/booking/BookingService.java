@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -106,6 +107,8 @@ public class BookingService {
             throw new IllegalArgumentException("End time must be after start time");
         }
 
+        validateDuration(bookingRequest.startTime(), bookingRequest.endTime());
+
         User user = ownershipValidationService.getCurrentUser();
 
         Stadium stadium = stadiumRepository.findByIdAndIsDeletedFalse(bookingRequest.stadiumId()).orElseThrow(
@@ -178,6 +181,8 @@ public class BookingService {
             throw new IllegalArgumentException("End time must be after start time");
         }
 
+        validateDuration(newStartTime,newEndTime);
+
         boolean hasConflict = bookingRepository.findConflictingBookingsForUpdate(bookingId,
                 targetStadium.getId(), newStartTime, newEndTime);
 
@@ -191,9 +196,7 @@ public class BookingService {
         booking.setStartTime(newStartTime);
         booking.setStadium(targetStadium);
 
-        Double newDuration = booking.getNumberOfHours();
-        Double newPrice = (newDuration * targetStadium.getPricePerHour()) + targetStadium.getBallRentalFee();
-        booking.setTotalPrice(newPrice);
+        updateBookingPrice(booking);
 
         // TO READ ONLY
         Booking savedBooking = bookingRepository.save(booking);
@@ -210,11 +213,7 @@ public class BookingService {
         booking.setStadium(stadium);
         booking.setStartTime(bookingRequest.startTime());
         booking.setEndTime(bookingRequest.endTime());
-
-        Double duration = booking.getNumberOfHours();
-
-        Double price = (duration * stadium.getPricePerHour()) + stadium.getBallRentalFee();
-        booking.setTotalPrice(price);
+        updateBookingPrice(booking);
         return booking;
     }
 
@@ -224,10 +223,28 @@ public class BookingService {
                 booking.getStartTime(),
                 booking.getEndTime(),
                 booking.getTotalPrice(),
+                booking.getStatus(),
                 booking.getStadium().getId(),
                 booking.getStadium().getName(),
                 booking.getUser().getId(),
                 booking.getUser().getName()
         );
+    }
+    private void validateDuration(LocalDateTime start, LocalDateTime end) {
+        long minutes = Duration.between(start, end).toMinutes();
+        double hours = minutes / 60.0;
+
+        if (hours < 1.0) throw new IllegalArgumentException("You can't book for less than an hour.");
+        if (hours > 3.0) throw new IllegalArgumentException("The stadium lasts 3 hours");
+
+        if (minutes % 30 != 0) {
+            throw new IllegalArgumentException("The reservation must be for full hours or for half an hour only.");
+        }
+    }
+    private void updateBookingPrice(Booking booking) {
+        Stadium stadium = booking.getStadium();
+        double hours = booking.getDuration();
+        double price = (hours * stadium.getPricePerHour()) + stadium.getBallRentalFee();
+        booking.setTotalPrice(price);
     }
 }

@@ -7,6 +7,7 @@ public record BookingResponse (
         LocalDateTime startTime,
         LocalDateTime endTime,
         Double totalPrice,
+        BookingStatus status,
         Long stadiumId,
         String stadiumName,
         Long userId,

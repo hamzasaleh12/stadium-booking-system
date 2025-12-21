@@ -32,6 +32,11 @@ public class GlobalExceptionHandler {
         return error(e.getMessage(), HttpStatus.CONFLICT);
     }
 
+    @ExceptionHandler(PhoneNumberTakenException.class)
+    public ResponseEntity<Object> handlePhoneTakenException(PhoneNumberTakenException e) {
+        return error(e.getMessage(), HttpStatus.CONFLICT);
+    }
+
     @ExceptionHandler(ConflictingBookingsException.class)
     public ResponseEntity<Object> handleConflictingBookingsException(ConflictingBookingsException e) {
         return error(e.getMessage(), HttpStatus.CONFLICT);
@@ -102,6 +107,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handleDataIntegrity(DataIntegrityViolationException e) {
         log.warn("Data integrity violation", e);
         return error("Data integrity violation", HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Object> handleIllegalArgumentException(IllegalArgumentException e) {
+        return error(e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Object> handleIllegalStateException(IllegalStateException e) {
+        return error(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(Exception.class)

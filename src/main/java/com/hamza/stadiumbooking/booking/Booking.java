@@ -48,7 +48,8 @@ public class Booking {
 
 
     @Transient
-    public Double getNumberOfHours(){
+    public Double getDuration(){
+        if(startTime == null || endTime == null) return 0.0;
         long minutes = ChronoUnit.MINUTES.between(startTime, endTime);
         return minutes / 60.0;
     }
