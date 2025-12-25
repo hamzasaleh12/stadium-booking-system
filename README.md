@@ -1,6 +1,6 @@
 # 🏟️ Stadium Booking System (V2 - Production Ready)
 
-A high-performance, secure backend RESTful API built with **Spring Boot 3.4.2** and **Java 21**. This system manages sports stadium reservations with automated conflict detection, ensuring no double-bookings and high availability.
+A high-performance, secure backend RESTful API built with **Spring Boot 3.4.2** and **Java 21**. This system manages sports stadium reservations with automated conflict detection, ensuring no double-bookings and smooth operations for admins, managers, and players.
 
 ![Java](https://img.shields.io/badge/Java-21-orange?style=for-the-badge&logo=java)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4.2-brightgreen?style=for-the-badge&logo=spring)
@@ -31,9 +31,18 @@ src/main/java/com/hamza/stadiumbooking
 ```
 
 ## 🔗 Live Demo & Docs
-- **Swagger UI (Live):** https://empowering-enchantment-production-6f7a.up.railway.app/swagger-ui/index.html#/
-- **Base URL (Railway):** https://empowering-enchantment-production-6f7a.up.railway.app
-- **Health Check:** https://empowering-enchantment-production-6f7a.up.railway.app/actuator/health
+- **Base URL (Railway):** https://stadium-booking-system-production.up.railway.app/
+- **Swagger UI (Live):** https://stadium-booking-system-production.up.railway.app/swagger-ui/index.html
+- **Health Check:** https://stadium-booking-system-production.up.railway.app/actuator/health
+
+## 🚀 Live Demo & Testing
+You can test the live API here: [Railway Live API](https://stadium-booking-system-production.up.railway.app/)
+
+| Role    | Email               | Password    |
+|---------|---------------------|-------------|
+| Admin   | admin@gmail.com     | Admin@1234  |
+| Manager | manager@gmail.com   | Manager@1234|
+| Player  | player@gmail.com    | Player@1234 |
 
 ## 🔌 API Documentation
 
@@ -55,7 +64,7 @@ src/main/java/com/hamza/stadiumbooking
 ### 3. Stadiums & Bookings
 | Method | Endpoint | Access | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/v1/stadiums` | Public | List stadiums (Cached) |
+| `GET` | `/api/v1/stadiums` | Public | List stadiums (Paginated) |
 | `POST` | `/api/v1/stadiums` | `ADMIN / MANAGER` | Add new stadium |
 | `POST` | `/api/v1/bookings` | `PLAYER` | Create booking (Conflict Check) |
 | `GET` | `/api/v1/bookings/my-bookings` | `PLAYER` | View personal booking history |
@@ -110,3 +119,4 @@ The API will be available at http://localhost:8082.
 
 GitHub: https://github.com/hamzasaleh12  
 LinkedIn: https://www.linkedin.com/in/hamza-saleh-908662392/
+
