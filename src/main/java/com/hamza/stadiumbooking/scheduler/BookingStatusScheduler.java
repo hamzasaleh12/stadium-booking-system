@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "scheduling.enabled", havingValue = "true")
 public class BookingStatusScheduler {
     private final BookingRepository bookingRepository;
 

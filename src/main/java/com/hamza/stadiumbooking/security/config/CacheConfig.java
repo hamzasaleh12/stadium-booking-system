@@ -10,7 +10,6 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 
 @Configuration
 @EnableCaching
-@ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis")
 public class CacheConfig {
 
     @Bean
