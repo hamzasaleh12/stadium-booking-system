@@ -41,12 +41,12 @@ src/main/java/com/hamza/stadiumbooking
 ```
 
 ## 🔗 Live Demo & Docs
-- **Base URL (Railway):** https://stadium-booking-system-production.up.railway.app/
-- **Swagger UI (Live):** https://stadium-booking-system-production.up.railway.app/swagger-ui/index.html
-- **Health Check:** https://stadium-booking-system-production.up.railway.app/actuator/health
+- **Base URL (Hugging Face):** https://hamzasaleh-stadium-booking.hf.space/
+- **Swagger UI (Live):** https://hamzasaleh-stadium-booking.hf.space/swagger-ui/index.html
+- **Health Check:** https://hamzasaleh-stadium-booking.hf.space/actuator/health
 
 ## 🚀 Live Demo & Testing
-You can test the live API here: [Railway Live API](https://stadium-booking-system-production.up.railway.app/)
+You can test the live API here: [Hugging Face Live API](https://hamzasaleh-stadium-booking.hf.space/)
 
 | Role    | Email               | Password    |
 |---------|---------------------|-------------|
@@ -79,51 +79,26 @@ You can test the live API here: [Railway Live API](https://stadium-booking-syste
 | `POST` | `/api/v1/bookings` | `PLAYER` | Create booking (Conflict Check) |
 | `GET` | `/api/v1/bookings/my-bookings` | `PLAYER` | View personal booking history |
 
-## ⚙️ Environment Variables
-To run the project, set the following variables (locally or on Railway/Docker):
-```
-PORT=8082
-MYSQLHOST=...
-MYSQLPORT=...
-MYSQLDATABASE=...
-MYSQLUSER=...
-MYSQLPASSWORD=...
-REDISHOST=...
-REDISPORT=...
-REDISPASSWORD=...
-JWT_SECRET=...
-```
+## ⚙️ Cloud Stack & Environment Variables
+The system is built using a modern cloud-native architecture:
+- **Database:** TiDB Serverless (MySQL Compatible)
+- **Cache:** Upstash Redis (Serverless)
+- **Deployment:** Hugging Face Spaces (Docker)
 
-Example:
-```bash
-export PORT=8082
-export MYSQLHOST=localhost
-export MYSQLPORT=3306
-export MYSQLDATABASE=stadium_db
-export MYSQLUSER=root
-export MYSQLPASSWORD=secret
-export REDISHOST=localhost
-export REDISPORT=6379
-export REDISPASSWORD=
-export JWT_SECRET=change-me
+```properties
+PORT=7860
+SPRING_DATASOURCE_URL=jdbc:mysql://<tidb-host>:4000/stadium_db
+SPRING_REDIS_URL=rediss://default:<password>@<upstash-host>:6379
+SPRING_DATA_REDIS_SSL_ENABLED=true
+JWT_SECRET=your-secure-jwt-secret
 ```
-
-## 🚀 Quick Start (Local)
-```bash
-# Build
-mvn clean package -DskipTests
-
-# Run
-java -jar target/*.jar
-```
-
 ## 📦 Local Deployment (Docker)
 ```bash
 docker build -t stadium-booking .
-docker run -p 8082:8082 --env-file .env stadium-booking
+docker run -p 7860:7860 --env-file .env stadium-booking
 ```
 
-The API will be available at http://localhost:8082.
+The API will be available at http://localhost:7860.
 
 👨‍💻 Connect with Me
 
