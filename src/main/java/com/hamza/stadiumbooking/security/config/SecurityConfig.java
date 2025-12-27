@@ -79,7 +79,7 @@ public class SecurityConfig{
                         .requestMatchers(HttpMethod.POST, "/api/v1/stadiums/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/stadiums/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/stadiums/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
-                        .requestMatchers(HttpMethod.POST, "/api/v1/bookings/**").hasAnyAuthority("ROLE_ADMIN","ROLE_PLAYER")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/bookings/add").hasAnyAuthority("ROLE_ADMIN", "ROLE_PLAYER")
                         .requestMatchers(HttpMethod.GET, "/api/v1/bookings/my-bookings").hasAnyAuthority("ROLE_ADMIN","ROLE_PLAYER")
                         .requestMatchers(HttpMethod.GET, "/api/v1/bookings/**").hasAnyAuthority("ROLE_MANAGER", "ROLE_ADMIN")
                         .anyRequest().authenticated()
