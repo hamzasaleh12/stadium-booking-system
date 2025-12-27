@@ -1,19 +1,14 @@
-# 🏟️ Stadium Booking System (V2 - Production Ready)
-
 ---
 title: Stadium Booking System
-
 emoji: 🏟️
-
 colorFrom: blue
-
 colorTo: green
-
 sdk: docker
-
 pinned: false
-
 ---
+
+
+# 🏟️ Stadium Booking System (V2 - Production Ready)
 
 A high-performance, secure backend RESTful API built with **Spring Boot 3.4.2** and **Java 21**. This system manages sports stadium reservations with automated conflict detection, ensuring no double-bookings and smooth operations for admins, managers, and players.
 
