@@ -4,12 +4,16 @@ import com.hamza.stadiumbooking.booking.BookingRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
-@Component @Slf4j @RequiredArgsConstructor
+@Component
+@Slf4j
+@RequiredArgsConstructor
+@ConditionalOnProperty(name = "scheduling.enabled", havingValue = "true")
 public class BookingStatusScheduler {
     private final BookingRepository bookingRepository;
 
@@ -18,7 +22,7 @@ public class BookingStatusScheduler {
     public void completeFinishedBookings() {
         LocalDateTime now = LocalDateTime.now();
         int updatedCount = bookingRepository.updateExpiredBookings(now);
-        if(updatedCount > 0){
+        if (updatedCount > 0) {
             log.info("Job executed: Moved {} bookings to COMPLETED status at {}", updatedCount, now);
         }
     }
