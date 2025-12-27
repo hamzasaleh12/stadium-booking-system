@@ -26,8 +26,10 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.util.List;
 
-@Configuration @EnableWebSecurity @EnableMethodSecurity
-public class SecurityConfig{
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity
+public class SecurityConfig {
 
     private final JwtUtils utils;
     private final HandlerExceptionResolver exceptionResolver;
@@ -41,7 +43,7 @@ public class SecurityConfig{
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("*")); // Link of front-end
+        configuration.setAllowedOrigins(List.of("*"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
 
@@ -49,13 +51,15 @@ public class SecurityConfig{
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
     @Bean
-    protected AuthenticationManager auth(UserDetailsService userDetailsService, BCryptPasswordEncoder passwordEncoder){
+    protected AuthenticationManager auth(UserDetailsService userDetailsService, BCryptPasswordEncoder passwordEncoder) {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder);
         return new ProviderManager(provider);
     }
+
     @Bean
     protected SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
         http.cors(c -> c.configurationSource(corsConfigurationSource()));
@@ -65,24 +69,31 @@ public class SecurityConfig{
         CustomAuthenticationFilter customAuthenticationFilter = new CustomAuthenticationFilter(authenticationManager, utils);
         customAuthenticationFilter.setFilterProcessesUrl("/api/v1/login");
 
-        http.authorizeHttpRequests(auth ->
-                auth
-                        .requestMatchers(
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html"
-                        ).permitAll()
-                        .requestMatchers("/api/v1/login/**", "/api/v1/auth/refresh-token/**").permitAll()
-                        .requestMatchers("/", "/actuator/health").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/stadiums/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/stadiums/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/stadiums/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/stadiums/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
-                        .requestMatchers(HttpMethod.POST, "/api/v1/bookings/add").hasAnyAuthority("ROLE_ADMIN", "ROLE_PLAYER")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/bookings/my-bookings").hasAnyAuthority("ROLE_ADMIN","ROLE_PLAYER")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/bookings/**").hasAnyAuthority("ROLE_MANAGER", "ROLE_ADMIN")
-                        .anyRequest().authenticated()
+        http.authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                        "/v3/api-docs/**",
+                        "/swagger-ui/**",
+                        "/swagger-ui.html"
+                ).permitAll()
+                .requestMatchers("/api/v1/login/**", "/api/v1/auth/refresh-token/**").permitAll()
+                .requestMatchers("/", "/actuator/health").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/stadiums/**").permitAll()
+
+                .requestMatchers(HttpMethod.POST, "/api/v1/stadiums/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
+                .requestMatchers(HttpMethod.PUT,  "/api/v1/stadiums/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
+                .requestMatchers(HttpMethod.DELETE,"/api/v1/stadiums/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
+
+                .requestMatchers(HttpMethod.POST, "/api/v1/bookings", "/api/v1/bookings/**")
+                .hasAnyAuthority("ROLE_ADMIN", "ROLE_PLAYER")
+
+                .requestMatchers(HttpMethod.GET, "/api/v1/bookings/my-bookings")
+                .hasAnyAuthority("ROLE_ADMIN", "ROLE_PLAYER")
+
+                .requestMatchers(HttpMethod.GET, "/api/v1/bookings/**")
+                .hasAnyAuthority("ROLE_MANAGER", "ROLE_ADMIN")
+
+                .anyRequest().authenticated()
         );
 
         http.addFilter(customAuthenticationFilter);
