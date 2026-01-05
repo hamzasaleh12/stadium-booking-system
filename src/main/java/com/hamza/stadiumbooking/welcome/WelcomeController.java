@@ -63,7 +63,7 @@ public class WelcomeController {
                 <body>
                     <div class="container">
                         <h1>Stadium Booking API 🚀</h1>
-                        <p>Welcome, The backend service is running successfully on Railway.</p>
+                        <p>Welcome, The backend service is running successfully.</p>
 
                         <div class="btn-group">
                             <a href="/swagger-ui/index.html" class="btn btn-swagger">Explore API Docs (Swagger)</a>
