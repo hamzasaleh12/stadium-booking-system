@@ -3,6 +3,8 @@ package com.hamza.stadiumbooking;
 import com.hamza.stadiumbooking.user.Role;
 import com.hamza.stadiumbooking.user.User;
 import com.hamza.stadiumbooking.user.UserRepository;
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -12,14 +14,22 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.time.LocalDate;
+import java.util.TimeZone;
 
 @SpringBootApplication
 @EnableScheduling
+@Slf4j
 @EnableCaching
 public class StadiumBookingSystemApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(StadiumBookingSystemApplication.class, args);
+    }
+
+    @PostConstruct
+    public void init() {
+        TimeZone.setDefault(TimeZone.getTimeZone("Africa/Cairo"));
+        log.info("the current time of application is: {}  ✅", java.time.LocalDateTime.now());
     }
 
     @Bean
