@@ -13,7 +13,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
 import java.util.TimeZone;
@@ -43,9 +42,18 @@ public class StadiumBookingSystemApplication {
     @Bean
     CommandLineRunner runDatabaseSeeder(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder) {
         return args -> {
-            seedUserIfNotExist(userRepository, passwordEncoder, "Super Admin", "admin@gmail.com", "Admin@1234", "01012345678", Role.ROLE_ADMIN);
-            seedUserIfNotExist(userRepository, passwordEncoder, "Manager User", "manager@gmail.com", "Manager@1234", "01022345678", Role.ROLE_MANAGER);
-            seedUserIfNotExist(userRepository, passwordEncoder, "Player User", "player@gmail.com", "Player@1234", "01032345678", Role.ROLE_PLAYER);
+            try {
+                log.info("⏳ Waiting for database to stabilize (15s)...");
+                Thread.sleep(15000); // وقت كافي جداً لـ TiDB Cloud
+
+                seedUserIfNotExist(userRepository, passwordEncoder, "Super Admin", "admin@gmail.com", "Admin@1234", "01012345678", Role.ROLE_ADMIN);
+                seedUserIfNotExist(userRepository, passwordEncoder, "Manager User", "manager@gmail.com", "Manager@1234", "01022345678", Role.ROLE_MANAGER);
+                seedUserIfNotExist(userRepository, passwordEncoder, "Player User", "player@gmail.com", "Player@1234", "01032345678", Role.ROLE_PLAYER);
+                log.info("✅ Database Seeding process finished.");
+            } catch (Exception e) {
+                // لو الجداول لسه مجهزتش، هيطبع Warning بس السيرفر هيفضل Running والسواجر هيفتح
+                log.warn("⚠️ Seeder skipped: Tables might not be ready yet. Error: {}", e.getMessage());
+            }
         };
     }
 
