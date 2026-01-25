@@ -15,13 +15,17 @@ import java.time.LocalDateTime;
 public class BookingStatusScheduler {
     private final BookingRepository bookingRepository;
 
-    @Scheduled(fixedRate = 1800000, initialDelay = 30000)
+    @Scheduled(fixedRate = 1800000, initialDelay = 60000)
     @Transactional
     public void completeFinishedBookings() {
-        LocalDateTime now = LocalDateTime.now();
-        int updatedCount = bookingRepository.updateExpiredBookings(now);
-        if (updatedCount > 0) {
-            log.info("Job executed: Moved {} bookings to COMPLETED status at {}", updatedCount, now);
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            int updatedCount = bookingRepository.updateExpiredBookings(now);
+            if (updatedCount > 0) {
+                log.info("Job executed: Moved {} bookings to COMPLETED status at {}", updatedCount, now);
+            }
+        } catch (Exception e) {
+            log.warn("⚠️ Scheduler skipped: Database tables might still be initializing. Error: {}", e.getMessage());
         }
     }
 }
