@@ -1,16 +1,17 @@
 package com.hamza.stadiumbooking.booking;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
-public record BookingResponse (
-        Long id,
+public record BookingResponse(
+        UUID id,
         LocalDateTime startTime,
         LocalDateTime endTime,
         Double totalPrice,
         BookingStatus status,
-        Long stadiumId,
+        UUID stadiumId,
         String stadiumName,
-        Long userId,
-        String userName
-){
-}
+        UUID userId,
+        String userName,
+        String note
+) {}

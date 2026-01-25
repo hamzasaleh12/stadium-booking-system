@@ -1,7 +1,9 @@
 package com.hamza.stadiumbooking.user;
 
+import java.util.UUID;
+
 public record UserResponse(
-        Long id,
+        UUID id,
         String name,
         String email,
         String phoneNumber,

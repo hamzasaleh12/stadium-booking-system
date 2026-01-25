@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -32,7 +33,7 @@ class UserServiceTest {
     private PasswordEncoder passwordEncoder;
 
     // --- Shared Test Data ---
-    private final Long sharedUserId = 1L;
+    private final UUID sharedUserId = UUID.randomUUID();
     private final String sharedPassword = "1111";
     private final String sharedEmail = "hamzasaleh@gmail.com";
     private final String sharedPhoneNumber = "01234567890";
@@ -40,8 +41,6 @@ class UserServiceTest {
     private User sharedOriginalUser;
     private User sharedUserCopy;
 
-    private List<User> users;
-    private Page<User> userPage;
     private Pageable pageable;
 
 
@@ -49,32 +48,33 @@ class UserServiceTest {
     void setup() {
         sharedOriginalUser = new User(
                 sharedUserId,0L,sharedName , sharedEmail,sharedPhoneNumber ,
-                sharedPassword, LocalDate.of(2001, 2, 15), Role.ROLE_PLAYER, null,false
+                sharedPassword, LocalDate.of(2001, 2, 15), null,null, Role.ROLE_PLAYER,false
         );
         sharedUserCopy = new User(
                 sharedOriginalUser.getId(), 0L,sharedOriginalUser.getName(), sharedOriginalUser.getEmail(),
                 sharedOriginalUser.getPhoneNumber(), sharedOriginalUser.getPassword(),
-                sharedOriginalUser.getDob(), sharedOriginalUser.getRole(), sharedOriginalUser.getBookings(),false
+                sharedOriginalUser.getDob(), null,null,sharedOriginalUser.getRole(),false
         );
-        users = List.of(sharedUserCopy);
-        userPage = new PageImpl<>(users);
         pageable = PageRequest.of(0, 10);
     }
 
-    // كان هنا فيه تيستات loadUserByUsername وأنا مسحتها خلاص عشان الكود يشتغل
-
     @Test
     void getAllUsers_ShouldReturnAllUsers() {
-        User user1 = new User(1L, 0L,"Hamza", "h@g.com", "010", "123", LocalDate.of(2000, 1, 1), Role.ROLE_PLAYER, null,false);
-        User user2 = new User(2L, 0L,"Ali", "a@g.com", "011", "456", LocalDate.of(1995, 5, 5), Role.ROLE_PLAYER, null,false);
-        users = List.of(user1,user2);
-        userPage = new PageImpl<>(users);
+        User user1 = new User(UUID.randomUUID(), 0L,"Hamza", "h@g.com", "010", "123", LocalDate.of(2000, 1, 1), null,null,Role.ROLE_PLAYER, false);
+        User user2 = new User(UUID.randomUUID(), 0L,"Ali", "a@g.com", "011", "456", LocalDate.of(1995, 5, 5), null,null,Role.ROLE_PLAYER, false);
+
+        List<User> users = List.of(user1, user2);
+        Page<User> userPage = new PageImpl<>(users);
+
         given(userRepository.findAllByIsDeletedFalse(pageable)).willReturn(userPage);
 
-        Page<UserResponse> responses =userService.getAllUsers(pageable);
+        Page<UserResponse> responses = userService.getAllUsers(pageable);
 
         verify(userRepository, times(1)).findAllByIsDeletedFalse(pageable);
-        assertThat(responses.getContent()).extracting(UserResponse::id).containsExactlyInAnyOrder(1L,2L);
+
+        assertThat(responses.getContent())
+                .extracting(UserResponse::id)
+                .containsExactlyInAnyOrder(user1.getId(), user2.getId());
     }
     @Test
     void getAllUsers_ShouldReturnEmpty() {
@@ -99,7 +99,7 @@ class UserServiceTest {
     }
     @Test
     void shouldThrowResourceNotFoundException_ForGetUser() {
-        Long nonExistentId = 99L;
+        UUID nonExistentId = UUID.randomUUID();
         given(userRepository.findByIdAndIsDeletedFalse(nonExistentId)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> userService.getUserById(nonExistentId))
@@ -110,7 +110,7 @@ class UserServiceTest {
     @Test
     void shouldGetUserIdByEmail(){
         given(userRepository.findByEmailAndIsDeletedFalse(sharedEmail)).willReturn(Optional.of(sharedUserCopy));
-        Long id = userService.getUserIdByEmail(sharedEmail);
+        UUID id = userService.getUserIdByEmail(sharedEmail);
 
         assertThat(id).isEqualTo(sharedUserId);
     }
@@ -129,8 +129,10 @@ class UserServiceTest {
                 sharedName, "player@gmail.com", sharedPhoneNumber, sharedPassword,
                 LocalDate.of(2000, 1, 1)
         );
-        User savedUser = new User(100L, 0L,sharedName, userRequest.email(), sharedPhoneNumber, sharedPassword,
-                userRequest.dob(), Role.ROLE_PLAYER, null,false);
+
+        UUID expectedId = UUID.randomUUID();
+        User savedUser = new User(expectedId, 0L, sharedName, userRequest.email(), sharedPhoneNumber, sharedPassword,
+                userRequest.dob(), null,null,Role.ROLE_PLAYER, false);
 
         given(userRepository.findByEmailAndIsDeletedFalse(userRequest.email())).willReturn(Optional.empty());
         given(passwordEncoder.encode(userRequest.password())).willReturn("hashed_password");
@@ -146,7 +148,7 @@ class UserServiceTest {
         assertThat(capturedUser.getEmail()).isEqualTo("player@gmail.com");
         assertThat(capturedUser.getPassword()).isEqualTo("hashed_password");
 
-        assertThat(response.id()).isEqualTo(100L);
+        assertThat(response.id()).isEqualTo(savedUser.getId());
         assertThat(response.name()).isEqualTo(sharedName);
     }
     @Test
@@ -176,7 +178,7 @@ class UserServiceTest {
     }
     @Test
     void deleteUser_ShouldNotFound() {
-        Long nonExistentId = 99L;
+        UUID nonExistentId = UUID.randomUUID();
         given(userRepository.findByIdAndIsDeletedFalse(nonExistentId)).willReturn(Optional.empty());
         assertThatThrownBy(() -> userService.deleteUser(nonExistentId))
                 .isInstanceOf(ResourceNotFoundException.class)
@@ -228,8 +230,8 @@ class UserServiceTest {
     void updateUser_ShouldThrowEmailTakenException_WhenNewEmailIsTakenByAnotherUser() {
         String takenEmail = "taken.by.99@gmail.com";
         User userWithTakenEmail = new User(
-                99L,0L, "Taken User", takenEmail, "9999",
-                "555", LocalDate.of(2000, 1, 1), Role.ROLE_PLAYER, null,false
+                UUID.randomUUID(),0L, "Taken User", takenEmail, "9999",
+                "555", LocalDate.of(2000, 1, 1), null,null,Role.ROLE_PLAYER,false
         );
 
         UserUpdateRequest userRequest = new UserUpdateRequest(

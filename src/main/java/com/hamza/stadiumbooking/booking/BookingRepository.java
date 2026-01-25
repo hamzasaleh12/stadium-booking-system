@@ -9,17 +9,18 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.UUID; // MODIFIED: Import UUID
 
 @Repository
-public interface BookingRepository extends JpaRepository<Booking, Long> {
+public interface BookingRepository extends JpaRepository<Booking, UUID> {
 
-    Page<Booking> findByUserId(Pageable pageable, Long userId);
+    Page<Booking> findByUserId(Pageable pageable, UUID userId);
 
-    Page<Booking> findByStadiumId(Pageable pageable,Long stadiumId);
+    Page<Booking> findByStadiumId(Pageable pageable, UUID stadiumId);
 
-    Page<Booking> findByUserIdAndStadiumId(Pageable pageable,Long userId, Long stadiumId);
+    Page<Booking> findByUserIdAndStadiumId(Pageable pageable, UUID userId, UUID stadiumId);
 
-    Page<Booking> findAllByUserId(Pageable pageable,Long userId);
+    Page<Booking> findAllByUserId(Pageable pageable, UUID userId);
 
     @Query("""
         SELECT case WHEN COUNT(b) > 0 then true ELSE false END
@@ -29,7 +30,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         AND (:endTime > b.startTime AND :startTime < b.endTime)
    \s""")
     boolean findConflictingBookingsForNew(
-            @Param("stadiumId") Long stadiumId,
+            @Param("stadiumId") UUID stadiumId,
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime
     );
@@ -43,8 +44,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         AND (:endTime > b.startTime AND :startTime < b.endTime)
    \s""")
     boolean findConflictingBookingsForUpdate(
-            @Param("bookingId") Long bookingId,
-            @Param("stadiumId") Long stadiumId,
+            @Param("bookingId") UUID bookingId,
+            @Param("stadiumId") UUID stadiumId,
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime
     );

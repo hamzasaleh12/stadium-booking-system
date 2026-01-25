@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController @Slf4j @RequiredArgsConstructor
 @RequestMapping(path = "/api/v1/users")
 public class UserController {
@@ -20,16 +22,16 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<UserResponse>> getAllUsers(@ParameterObject
-            @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+                                                          @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         log.info("Incoming request to get ALL Users | Page: {}", pageable.getPageNumber());
         return ResponseEntity.ok(userService.getAllUsers(pageable));
     }
 
     @GetMapping("/{userId}")
     @PreAuthorize("hasRole('ADMIN') or (hasRole('PLAYER') and #userId == authentication.principal.id)")
-    public ResponseEntity<UserResponse> getUserById(@PathVariable Long userId) {
+    public ResponseEntity<UserResponse> getUserById(@PathVariable UUID userId) {
         log.info("Incoming request to get User details for ID: {}", userId);
         return ResponseEntity.ok(userService.getUserById(userId));
     }
@@ -38,13 +40,12 @@ public class UserController {
     public ResponseEntity<UserResponse> addUser(@RequestBody @Valid UserRequest userRequest) {
         log.info("Incoming request to register new User with Email: '{}'", userRequest.email());
         UserResponse savedUser = userService.addUser(userRequest);
-
         return new ResponseEntity<>(savedUser, HttpStatus.CREATED);
     }
 
     @DeleteMapping("/{userId}")
     @PreAuthorize("hasRole('ADMIN') or (hasRole('PLAYER') and #userId == authentication.principal.id)")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
+    public ResponseEntity<Void> deleteUser(@PathVariable UUID userId) {
         log.info("Incoming request to delete User ID: {}",userId);
         userService.deleteUser(userId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -53,7 +54,7 @@ public class UserController {
     @PutMapping(path = "/{userId}")
     @PreAuthorize("hasRole('ADMIN') or (hasRole('PLAYER') and #userId == authentication.principal.id)")
     public ResponseEntity<UserResponse> updateUser(
-            @PathVariable Long userId,
+            @PathVariable UUID userId,
             @RequestBody @Valid UserUpdateRequest userUpdateRequest
     ) {
         log.info("Incoming request to update User ID: {}", userId);
@@ -64,7 +65,7 @@ public class UserController {
     @PutMapping("/{userId}/role")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponse> changeUserRole(
-            @PathVariable Long userId,
+            @PathVariable UUID userId,
             @RequestParam String roleAsString
     ) {
         log.info("Incoming request to change role for User ID: {} to new Role: '{}'", userId, roleAsString);

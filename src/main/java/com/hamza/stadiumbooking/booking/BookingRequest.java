@@ -4,15 +4,11 @@ import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
+import java.util.UUID; // MODIFIED: Import UUID
 
 public record BookingRequest(
-        @NotNull(message = "Stadium ID is required")
-        Long stadiumId,
-        @NotNull(message = "Start time is required")
-        @Future(message = "Booking start time must be in the future")
-        LocalDateTime startTime,
-        @NotNull(message = "End time is required")
-        @Future(message = "Booking end time must be in the future")
-        LocalDateTime endTime
-) {
-}
+        @NotNull UUID stadiumId,
+        @NotNull @Future LocalDateTime startTime,
+        @NotNull @Future LocalDateTime endTime,
+        String note
+) {}

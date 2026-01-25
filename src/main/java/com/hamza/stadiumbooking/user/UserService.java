@@ -1,6 +1,7 @@
 package com.hamza.stadiumbooking.user;
 
 import com.hamza.stadiumbooking.exception.EmailTakenException;
+import com.hamza.stadiumbooking.exception.PhoneNumberTakenException;
 import com.hamza.stadiumbooking.exception.ResourceNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.Optional;
+import java.util.UUID;
 
 
 @Service @Slf4j @RequiredArgsConstructor
@@ -26,7 +28,7 @@ public class UserService{
         return userRepository.findAllByIsDeletedFalse(pageable).map(this::mapToDto);
     }
 
-    public UserResponse getUserById(Long id) {
+    public UserResponse getUserById(UUID id) {
         User user = userRepository.findByIdAndIsDeletedFalse(id).orElseThrow(
                 () -> {
                     log.error("Action: getUserById | Failure | User ID {} not found", id);
@@ -35,7 +37,7 @@ public class UserService{
         return mapToDto(user);
     }
 
-    public Long getUserIdByEmail(String email) {
+    public UUID getUserIdByEmail(String email) {
         User user = userRepository.findByEmailAndIsDeletedFalse(email)
                 .orElseThrow(() -> {
                     log.error("Action: getUserIdByEmail | Failure | No user found with email: {}", email);
@@ -46,15 +48,23 @@ public class UserService{
 
     @Transactional
     public UserResponse addUser(UserRequest userRequest) {
-        boolean isPresent = userRepository.findByEmailAndIsDeletedFalse(userRequest.email()).isPresent();
-        if (isPresent) {
+        boolean isEmailPresent = userRepository.findByEmailAndIsDeletedFalse(userRequest.email()).isPresent();
+        boolean isPhonePresent = userRepository.existsByPhoneNumberAndIsDeletedFalse(userRequest.phoneNumber());
+
+        if (isEmailPresent) {
             log.warn("Action: addUser | Failure | Email already exists: {}", userRequest.email());
             throw new EmailTakenException("Email is already taken: " + userRequest.email());
         }
+        if (isPhonePresent) {
+            log.warn("Action: addUser | Failure | Phone already exists: {}", userRequest.phoneNumber());
+            throw new PhoneNumberTakenException("Phone Number is already taken: " + userRequest.phoneNumber());
+        }
+
         int age = Period.between(userRequest.dob(), LocalDate.now()).getYears();
         if (age < 5) {
-            throw new IllegalArgumentException("the age must be at least 5 years to register.");
+            throw new IllegalArgumentException("The age must be at least 5 years to register.");
         }
+
         User newUser = mapToEntity(userRequest);
         newUser.setPassword(passwordEncoder.encode(userRequest.password()));
         User savedUser = userRepository.save(newUser);
@@ -64,7 +74,7 @@ public class UserService{
     }
 
     @Transactional
-    public void deleteUser(Long userId) {
+    public void deleteUser(UUID userId) {
         User user = userRepository.findByIdAndIsDeletedFalse(userId).orElseThrow(
                 () -> {
                     log.error("Action: deleteUser | Failure | User ID {} not found", userId);
@@ -77,26 +87,25 @@ public class UserService{
     }
 
     @Transactional
-    public UserResponse updateUser(Long userId, UserUpdateRequest request) {
+    public UserResponse updateUser(UUID userId, UserUpdateRequest request) {
         User user = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> {
                     log.error("Action: updateUser | Failure | User ID {} not found", userId);
                     return new ResourceNotFoundException("User not found with ID: " + userId);
                 });
 
-        boolean passwordChanged = request.password() != null && !request.password().isEmpty();
-        if (passwordChanged) {
+        if (request.password() != null && !request.password().isEmpty()) {
             log.warn("Action: updateUser | Security Alert | Password changed for User ID: {}", userId);
             user.setPassword(passwordEncoder.encode(request.password()));
         }
 
-        user.setName((request.name() != null && !request.name().isEmpty()) ? request.name() : user.getName());
+        if (request.name() != null && !request.name().isEmpty()) {
+            user.setName(request.name());
+        }
 
         if (request.email() != null && !request.email().isEmpty()) {
             if (!request.email().equals(user.getEmail())) {
-
                 Optional<User> userWithSameEmail = userRepository.findByEmailAndIsDeletedFalse(request.email());
-
                 if (userWithSameEmail.isPresent()) {
                     log.warn("Action: updateUser | Conflict | Email {} is already taken", request.email());
                     throw new EmailTakenException("Email " + request.email() + " is already taken.");
@@ -106,7 +115,13 @@ public class UserService{
         }
 
         if (request.phoneNumber() != null && request.phoneNumber().length() == 11) {
-            user.setPhoneNumber(request.phoneNumber());
+            if (!request.phoneNumber().equals(user.getPhoneNumber())) {
+                if (userRepository.existsByPhoneNumberAndIsDeletedFalse(request.phoneNumber())) {
+                    log.warn("Action: updateUser | Conflict | Phone {} is already taken", request.phoneNumber());
+                    throw new PhoneNumberTakenException("Phone number " + request.phoneNumber() + " is already taken.");
+                }
+                user.setPhoneNumber(request.phoneNumber());
+            }
         }
 
         if (request.dob() != null) {
@@ -123,7 +138,7 @@ public class UserService{
         return mapToDto(savedUser);
     }
 
-    public UserResponse changeUserRole(Long userId, String newRoleAsString) {
+    public UserResponse changeUserRole(UUID userId, String newRoleAsString) {
         User user = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> {
                     log.error("Action: changeUserRole | Failure | User ID {} not found", userId);
@@ -142,7 +157,6 @@ public class UserService{
         return mapToDto(savedUser);
     }
 
-    // ... Helper Methods (mapToDto, mapToEntity) ...
     private UserResponse mapToDto(User user) {
         return new UserResponse(
                 user.getId(),

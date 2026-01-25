@@ -13,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
+import java.util.UUID;
 
 @RequiredArgsConstructor @Service
 public class OwnershipValidationService {
@@ -22,7 +23,8 @@ public class OwnershipValidationService {
     public String getCurrentUserEmail(){
         return Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
     }
-    public Long getCurrentUserId(){
+
+    public UUID getCurrentUserId(){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if(authentication == null || !authentication.isAuthenticated()){
             throw new IllegalStateException("User not authenticated.");
@@ -43,33 +45,33 @@ public class OwnershipValidationService {
                 .stream().anyMatch(a-> Objects.equals(a.getAuthority(), "ROLE_ADMIN"));
     }
 
-    public void checkOwnership(Long stadiumId) {
+    public void checkOwnership(UUID stadiumId) {
         if (isAdmin()) {
             return;
         }
-        Long currentUserId = getCurrentUserId();
+        UUID currentUserId = getCurrentUserId();
         boolean isOwner = stadiumRepository.existsByIdAndOwner_Id(stadiumId, currentUserId);
         if (!isOwner) {
             throw new AccessDeniedException("Permission denied. The stadium is not owned by the current manager.");
         }
     }
-    public void checkBookingOwnership(Long bookingUserId){
-        Long currentUserId = getCurrentUserId();
+
+    public void checkBookingOwnership(UUID bookingUserId){
+        UUID currentUserId = getCurrentUserId();
         if (!currentUserId.equals(bookingUserId)) {
             throw new AccessDeniedException("Permission denied. You are not the owner of this booking.");
         }
     }
 
-
-        public void checkUsership(Long userId){
-            if(isAdmin()){
-                return;
-            }
-            String currentEmail = getCurrentUserEmail();
-            boolean isOwner = userRepository.existsByIdAndEmail(userId,currentEmail);
-            if(!isOwner){
-                throw new AccessDeniedException("Permission denied. for this user profile");
-            }
+    public void checkUsership(UUID userId){
+        if(isAdmin()){
+            return;
+        }
+        String currentEmail = getCurrentUserEmail();
+        boolean isOwner = userRepository.existsByIdAndEmail(userId,currentEmail);
+        if(!isOwner){
+            throw new AccessDeniedException("Permission denied. for this user profile");
+        }
     }
 
     public User getCurrentUser() {
@@ -85,11 +87,12 @@ public class OwnershipValidationService {
         return authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals(Role.ROLE_PLAYER.name()));
     }
-    public boolean isStadiumOwner(Long stadiumId) {
+
+    public boolean isStadiumOwner(UUID stadiumId) {
         if (isAdmin()) {
             return true;
         }
-        Long currentUserId = getCurrentUserId();
+        UUID currentUserId = getCurrentUserId();
         return stadiumRepository.existsByIdAndOwner_Id(stadiumId, currentUserId);
     }
 }

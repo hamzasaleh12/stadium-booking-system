@@ -8,13 +8,16 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface StadiumRepository extends JpaRepository<Stadium,Long> {
-    Page<Stadium> findAllByIsDeletedFalse(Pageable pageable);
-    Optional<Stadium> findByIdAndIsDeletedFalse(Long id);
+public interface StadiumRepository extends JpaRepository<Stadium, UUID> {
 
-    boolean existsByIdAndOwner_Id(Long id, Long owner_id);
+    Page<Stadium> findAllByIsDeletedFalse(Pageable pageable);
+
+    Optional<Stadium> findByIdAndIsDeletedFalse(UUID id);
+
+    boolean existsByIdAndOwner_Id(UUID id, UUID owner_id);
 
     @Query("SELECT DISTINCT s.location FROM Stadium s WHERE s.isDeleted = false")
     List<String> findAllDistinctLocations();

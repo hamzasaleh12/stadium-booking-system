@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -23,7 +24,7 @@ class UserRepositoryTest {
         userRepository.deleteAll();
         User user = new User(
                 null, 0L, "hamza", "hamza@gmail.com", "01000000000",
-                "12345", LocalDate.now(), Role.ROLE_PLAYER, null, false
+                "12345", LocalDate.now(), null,null, Role.ROLE_PLAYER, false
         );
         savedUser = userRepository.save(user);
     }
@@ -67,14 +68,14 @@ class UserRepositoryTest {
 
     @Test
     void getUserIdByEmail(){
-        Long id = userRepository.getUserIdByEmail(savedUser.getEmail());
+        UUID id = userRepository.getUserIdByEmail(savedUser.getEmail());
 
         assertThat(id).isNotNull();
         assertThat(id).isEqualTo(savedUser.getId());
     }
     @Test
     void shouldNotGetUserIdByEmail(){
-        Long id = userRepository.getUserIdByEmail("fake@gmail.com");
+        UUID id = userRepository.getUserIdByEmail("fake@gmail.com");
 
         assertThat(id).isNull();
     }
@@ -97,7 +98,7 @@ class UserRepositoryTest {
     }
     @Test
     void findByIdAndIsDeletedFalse_ShouldNotFound(){
-        Optional<User> user = userRepository.findByIdAndIsDeletedFalse(999L);
+        Optional<User> user = userRepository.findByIdAndIsDeletedFalse(UUID.randomUUID());
 
         assertThat(user).isEmpty();
     }

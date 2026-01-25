@@ -15,6 +15,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.time.LocalDate;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -37,8 +38,9 @@ class UserDetailsServiceImplTest {
 
     @BeforeEach
     void setup() {
-        sharedUser = new User(1L, 0L, "Hamza Saleh", sharedEmail, "01234567890",
-                "hashedPassword", LocalDate.of(2001, 2, 15), Role.ROLE_PLAYER, null, false
+        sharedUser = new User(
+                UUID.randomUUID(), 0L, "Hamza Saleh", sharedEmail, "01234567890", "hashedPassword",
+                LocalDate.of(2001, 2, 15), null, null, Role.ROLE_PLAYER, false
         );
     }
 

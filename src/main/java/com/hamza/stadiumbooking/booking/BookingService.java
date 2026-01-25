@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -28,7 +30,7 @@ public class BookingService {
 
 
     public Page<BookingResponse> getMyBookings(Pageable pageable) {
-        Long currentUserId = ownershipValidationService.getCurrentUserId();
+        UUID currentUserId = ownershipValidationService.getCurrentUserId();
         log.info("Action: getMyBookings | Requesting bookings for User ID: {}", currentUserId);
 
         Page<Booking> bookings = bookingRepository.findAllByUserId(pageable, currentUserId);
@@ -37,7 +39,7 @@ public class BookingService {
         return bookings.map(this::mapToDto);
     }
 
-    public Page<BookingResponse> getAllBookings(Pageable pageable, Long stadiumId, Long userId) {
+    public Page<BookingResponse> getAllBookings(Pageable pageable, UUID stadiumId, UUID userId) {
         boolean isAdmin = ownershipValidationService.isAdmin();
         log.info("Action: getAllBookings | Params: stadiumId={}, userId={}, isAdmin={}",
                 stadiumId, userId, isAdmin);
@@ -78,7 +80,7 @@ public class BookingService {
         return bookings.map(this::mapToDto);
     }
 
-    public BookingResponse getBookingById(Long id) {
+    public BookingResponse getBookingById(UUID id) {
         log.info("Action: getBookingById | ID: {}", id);
 
         Booking booking = bookingRepository.findById(id).orElseThrow(
@@ -101,39 +103,38 @@ public class BookingService {
 
     @Transactional
     public BookingResponse addBooking(BookingRequest bookingRequest) {
-        boolean isAfter = bookingRequest.endTime().isAfter(bookingRequest.startTime());
-        if (!isAfter) {
-            log.warn("Action: addBooking | Invalid Time Range: Start={}, End={}", bookingRequest.startTime(), bookingRequest.endTime());
+        if (!bookingRequest.endTime().isAfter(bookingRequest.startTime())) {
             throw new IllegalArgumentException("End time must be after start time");
         }
 
         validateDuration(bookingRequest.startTime(), bookingRequest.endTime());
 
-        User user = ownershipValidationService.getCurrentUser();
+        Stadium stadium = stadiumRepository.findByIdAndIsDeletedFalse(bookingRequest.stadiumId())
+                .orElseThrow(() -> new ResourceNotFoundException("Stadium not found."));
 
-        Stadium stadium = stadiumRepository.findByIdAndIsDeletedFalse(bookingRequest.stadiumId()).orElseThrow(
-                () -> new ResourceNotFoundException("Stadium not found or is currently closed."));
+        validateBusinessHours(stadium, bookingRequest.startTime().toLocalTime(), bookingRequest.endTime().toLocalTime());
 
         boolean hasConflict = bookingRepository.findConflictingBookingsForNew(
                 bookingRequest.stadiumId(), bookingRequest.startTime(), bookingRequest.endTime());
 
-        if (hasConflict) {
-            log.warn("Action: addBooking | Conflict Detected: StadiumId={}, Start={}, End={}",
-                    bookingRequest.stadiumId(), bookingRequest.startTime(), bookingRequest.endTime());
-            throw new ConflictingBookingsException("This time is booked");
-        }
+        if (hasConflict) throw new ConflictingBookingsException("This time is already booked");
+
+        // --- Prevent Race Condition (The Professional Way) ---
+        stadium.setLastLockAt(LocalDateTime.now());
+        stadiumRepository.save(stadium);
+        // ------------------------------
+
+        User user = ownershipValidationService.getCurrentUser();
 
         Booking booking = mapToEntity(bookingRequest, user, stadium);
+        booking.setNote(bookingRequest.note());
         booking.setStatus(BookingStatus.CONFIRMED);
 
-        Booking savedBook = bookingRepository.save(booking);
-
-        log.info("Action: addBooking | Success | Booking Created with ID: {}", savedBook.getId());
-        return mapToDto(savedBook);
+        return mapToDto(bookingRepository.save(booking));
     }
 
     @Transactional
-    public void deleteBooking(Long bookingId) {
+    public void deleteBooking(UUID bookingId) {
         Booking booking = bookingRepository.findById(bookingId).orElseThrow(
                 () -> new ResourceNotFoundException("Booking not found with ID: " + bookingId)
         );
@@ -143,19 +144,20 @@ public class BookingService {
             throw new IllegalStateException("Booking is already cancelled.");
         }
 
+        validateModificationPolicy(booking);
+
         if (!ownershipValidationService.isAdmin()) {
             ownershipValidationService.checkBookingOwnership(booking.getUser().getId());
         }
 
         booking.setStatus(BookingStatus.CANCELLED);
-        // TO READ ONLY
         bookingRepository.save(booking);
 
         log.info("Action: deleteBooking | Success | Booking Cancelled ID: {}", bookingId);
     }
 
     @Transactional
-    public BookingResponse updateBooking(Long bookingId, BookingRequestForUpdate request) {
+    public BookingResponse updateBooking(UUID bookingId, BookingRequestForUpdate request) {
         Booking booking = bookingRepository.findById(bookingId).orElseThrow(
                 () -> new ResourceNotFoundException("Booking not found with ID: " + bookingId)
         );
@@ -164,6 +166,8 @@ public class BookingService {
             log.warn("Action: updateBooking | Invalid Status: {} | ID: {}", booking.getStatus(), bookingId);
             throw new IllegalStateException("Cannot update a cancelled or completed booking.");
         }
+
+        validateModificationPolicy(booking);
 
         Stadium targetStadium = (request.stadiumId() != null)
                 ? stadiumRepository.findByIdAndIsDeletedFalse(request.stadiumId()).orElseThrow(() -> new ResourceNotFoundException("Stadium not found with ID: " + request.stadiumId()))
@@ -183,6 +187,8 @@ public class BookingService {
 
         validateDuration(newStartTime,newEndTime);
 
+        validateBusinessHours(targetStadium, newStartTime.toLocalTime(), newEndTime.toLocalTime());
+
         boolean hasConflict = bookingRepository.findConflictingBookingsForUpdate(bookingId,
                 targetStadium.getId(), newStartTime, newEndTime);
 
@@ -192,13 +198,19 @@ public class BookingService {
             throw new ConflictingBookingsException("This time is booked");
         }
 
+        targetStadium.setLastLockAt(LocalDateTime.now());
+        stadiumRepository.save(targetStadium);
+
+        if (request.note() != null) {
+            booking.setNote(request.note());
+        }
+
         booking.setEndTime(newEndTime);
         booking.setStartTime(newStartTime);
         booking.setStadium(targetStadium);
 
         updateBookingPrice(booking);
 
-        // TO READ ONLY
         Booking savedBooking = bookingRepository.save(booking);
 
         log.info("Action: updateBooking | Success | Booking Updated ID: {}", savedBooking.getId());
@@ -227,7 +239,8 @@ public class BookingService {
                 booking.getStadium().getId(),
                 booking.getStadium().getName(),
                 booking.getUser().getId(),
-                booking.getUser().getName()
+                booking.getUser().getName(),
+                booking.getNote()
         );
     }
     private void validateDuration(LocalDateTime start, LocalDateTime end) {
@@ -241,6 +254,32 @@ public class BookingService {
             throw new IllegalArgumentException("The reservation must be for full hours or for half an hour only.");
         }
     }
+
+    private void validateBusinessHours(Stadium stadium, LocalTime start, LocalTime end) {
+        LocalTime open = stadium.getOpenTime();
+        LocalTime close = stadium.getCloseTime();
+
+        boolean isAllowed;
+        if (close.isAfter(open)) {
+            isAllowed = !start.isBefore(open) && !end.isAfter(close);
+        } else {
+            isAllowed = !start.isBefore(open) || !end.isAfter(close);
+        }
+
+        if (!isAllowed) {
+            throw new IllegalArgumentException("Stadium is closed during the selected time. Operating hours: " + open + " to " + close);
+        }
+    }
+
+    private void validateModificationPolicy(Booking booking) {
+        if (!ownershipValidationService.isAdmin() &&
+                LocalDateTime.now().plusHours(6).isAfter(booking.getStartTime())) {
+
+            log.warn("Action: Validate Policy | Late Modification Attempt | BookingID: {}", booking.getId());
+            throw new IllegalStateException("You cannot cancel or update the booking within 6 hours of the start time.");
+        }
+    }
+
     private void updateBookingPrice(Booking booking) {
         Stadium stadium = booking.getStadium();
         double hours = booking.getDuration();

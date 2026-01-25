@@ -11,7 +11,7 @@ public record UserRequest(
         @Email(message = "Invalid email format")
         @Pattern(
                 regexp = "^[A-Za-z0-9._%+-]+@(gmail|yahoo|outlook|hotmail)\\.com$",
-                message = "Email must be from a valid provider (gmail, yahoo, outlook, hotmail)"
+                message = "Email must be from a valid provider (Gmail, yahoo, outlook, hotMail)"
         )
         String email,
         @Pattern(regexp = "^01[0125][0-9]{8}$", message = "Invalid Phone Number")

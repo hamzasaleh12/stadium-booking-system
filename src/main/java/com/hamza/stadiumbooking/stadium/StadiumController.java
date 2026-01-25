@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
 import java.util.List;
+import java.util.UUID;
 
 
 @RestController @RequiredArgsConstructor @Slf4j
@@ -26,13 +27,13 @@ public class StadiumController {
 
     @GetMapping
     public ResponseEntity<Page<StadiumResponse>> getAllStadiums(@ParameterObject
-        @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable){
+                                                                @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable){
         log.info("Incoming request to get all stadiums | Page: {}", pageable.getPageNumber());
         return ResponseEntity.ok(stadiumService.getAllStadiums(pageable));
     }
 
     @GetMapping("/{stadiumId}")
-    public ResponseEntity<StadiumResponse> getStadiumById(@PathVariable Long stadiumId) {
+    public ResponseEntity<StadiumResponse> getStadiumById(@PathVariable UUID stadiumId) {
         log.info("Incoming request to get stadium with ID: {}", stadiumId);
         return ResponseEntity.ok(stadiumService.getStadiumById(stadiumId));
     }
@@ -53,7 +54,7 @@ public class StadiumController {
 
     @DeleteMapping("/{stadiumId}")
     @PreAuthorize("hasRole('ADMIN') or (hasRole('MANAGER') and @ownershipValidationService.isStadiumOwner(#stadiumId))")
-    public ResponseEntity<Void> deleteStadium(@PathVariable Long stadiumId) {
+    public ResponseEntity<Void> deleteStadium(@PathVariable UUID stadiumId) {
         log.info("Incoming request to delete stadium ID: {} by User ID: {}",
                 stadiumId, ownershipValidationService.getCurrentUserId());
         stadiumService.deleteStadium(stadiumId);
@@ -63,7 +64,7 @@ public class StadiumController {
     @PutMapping("/{stadiumId}")
     @PreAuthorize("hasRole('ADMIN') or (hasRole('MANAGER') and @ownershipValidationService.isStadiumOwner(#stadiumId))")
     public ResponseEntity<StadiumResponse> updateStadium(
-            @PathVariable Long stadiumId,
+            @PathVariable UUID stadiumId,
             @RequestBody @Valid StadiumRequestForUpdate stadiumRequestForUpdate
     ) {
         log.info("Incoming request to update stadium ID: {} by User ID: {}",

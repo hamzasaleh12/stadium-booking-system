@@ -18,8 +18,6 @@ import org.springframework.web.bind.MissingPathVariableException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
@@ -27,6 +25,8 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.ZonedDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @ControllerAdvice
@@ -43,7 +43,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(NoHandlerFoundException.class)
-    public ResponseEntity<Object> handleNoHandler(NoHandlerFoundException e) {
+    public ResponseEntity<Object> handleNoHandler() {
         return error("Endpoint not found", HttpStatus.NOT_FOUND);
     }
 
@@ -92,13 +92,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Object> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        StringBuilder errors = new StringBuilder();
+        Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach((error) -> {
             String fieldName = ((org.springframework.validation.FieldError) error).getField();
             String errorMessage = error.getDefaultMessage();
-            errors.append(fieldName).append(": ").append(errorMessage).append("; ");
+            errors.put(fieldName, errorMessage);
         });
-        return error("Validation Failed: " + errors, HttpStatus.BAD_REQUEST);
+        ApiError apiError = new ApiError("Validation Failed", HttpStatus.BAD_REQUEST, ZonedDateTime.now(), errors);
+        return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler({ConstraintViolationException.class, WebExchangeBindException.class})

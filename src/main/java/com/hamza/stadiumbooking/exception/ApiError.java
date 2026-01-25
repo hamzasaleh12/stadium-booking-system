@@ -1,20 +1,15 @@
 package com.hamza.stadiumbooking.exception;
-
-import lombok.Getter;
 import org.springframework.http.HttpStatus;
-
 import java.time.ZonedDateTime;
+import java.util.Map;
 
-@Getter
-public class ApiError {
-    private final String msg;
-    private final HttpStatus httpStatus;
-    private final ZonedDateTime zonedDateTime;
-
+public record ApiError(
+        String msg,
+        HttpStatus httpStatus,
+        ZonedDateTime zonedDateTime,
+        Map<String, String> validationErrors
+) {
     public ApiError(String msg, HttpStatus httpStatus, ZonedDateTime zonedDateTime) {
-        this.msg = msg;
-        this.httpStatus = httpStatus;
-        this.zonedDateTime = zonedDateTime;
+        this(msg, httpStatus, zonedDateTime, null);
     }
-
 }
