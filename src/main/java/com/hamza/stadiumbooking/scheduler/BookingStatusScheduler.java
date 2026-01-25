@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 public class BookingStatusScheduler {
     private final BookingRepository bookingRepository;
 
-    @Scheduled(fixedRate = 1800000)
+    @Scheduled(fixedRate = 1800000, initialDelay = 30000)
     @Transactional
     public void completeFinishedBookings() {
         LocalDateTime now = LocalDateTime.now();
