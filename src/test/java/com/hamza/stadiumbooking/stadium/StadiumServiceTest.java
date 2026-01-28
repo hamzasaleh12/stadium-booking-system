@@ -59,39 +59,15 @@ class StadiumServiceTest {
         Double sharedPrice = 500.00;
 
         sharedOriginalStadium = new Stadium(
-                sharedStadiumId,
-                0L,
-                sharedStadiumName,
-                "Nasr-city",
-                sharedPrice,
-                "image.com",
-                sharedType,
-                50,
-                LocalTime.of(10, 0),
-                LocalTime.of(23, 0),
-                null,
-                new HashSet<>(Set.of("Wifi", "Parking")),
-                manger,
-                false,
-                null, null
+                sharedStadiumId, 0L, sharedStadiumName, "Nasr-city", sharedPrice, "image.com", sharedType, 50,
+                LocalTime.of(10, 0), LocalTime.of(23, 0), null, new HashSet<>(Set.of("Wifi", "Parking")),
+                manger, false, null, null
         );
 
         sharedStadiumCopy = new Stadium(
-                sharedOriginalStadium.getId(),
-                0L,
-                sharedOriginalStadium.getName(),
-                sharedOriginalStadium.getLocation(),
-                sharedOriginalStadium.getPricePerHour(),
-                sharedOriginalStadium.getPhotoUrl(),
-                sharedOriginalStadium.getType(),
-                sharedOriginalStadium.getBallRentalFee(),
-                sharedOriginalStadium.getOpenTime(),
-                sharedOriginalStadium.getCloseTime(),
-                null,
-                sharedOriginalStadium.getFeatures(),
-                sharedOriginalStadium.getOwner(),
-                false,
-                null, null
+                sharedOriginalStadium.getId(), 0L, sharedOriginalStadium.getName(), sharedOriginalStadium.getLocation(), sharedOriginalStadium.getPricePerHour(),
+                sharedOriginalStadium.getPhotoUrl(), sharedOriginalStadium.getType(), sharedOriginalStadium.getBallRentalFee(), sharedOriginalStadium.getOpenTime(), sharedOriginalStadium.getCloseTime(),
+                null, sharedOriginalStadium.getFeatures(), sharedOriginalStadium.getOwner(), false, null, null
         );
         stadiums = List.of(sharedStadiumCopy);
         stadiumPage = new PageImpl<>(stadiums);
@@ -244,7 +220,6 @@ class StadiumServiceTest {
 
         assertThat(capturedStadium.getBallRentalFee()).isEqualTo(0);
     }
-
     @Test
     void addStadiumThrowUserNotFound() {
         StadiumRequest request = new StadiumRequest(
@@ -256,6 +231,20 @@ class StadiumServiceTest {
 
         assertThatThrownBy(() -> stadiumService.addStadium(request)).isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Manager not found with ID: " + manger.getId());
+    }
+    @Test
+    void addStadiumThrowAuthenticationAlert() {
+        StadiumRequest request = new StadiumRequest(
+                "New Test Field", "Riyadh Location", 120.0, 10,
+                LocalTime.of(10, 0), LocalTime.of(22, 0), new HashSet<>(), Type.FIVE_A_SIDE, "https://new-photo.com"
+        );
+        given(ownershipValidationService.getCurrentUserId()).willReturn(null);
+
+        assertThatThrownBy(() -> stadiumService.addStadium(request)).isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("Action: addStadium | Security Failure | User must be authenticated to add a stadium");
+
+        verify(ownershipValidationService,times(1)).getCurrentUserId();
+        verify(stadiumRepository,never()).save(any(Stadium.class));
     }
 
     @Test
@@ -304,7 +293,7 @@ class StadiumServiceTest {
     void updateStadium_updateStadium_ShouldThrowNotFound_WhenStadiumDoesNotExist() {
         StadiumRequestForUpdate request = new StadiumRequestForUpdate(
                 "Hacker Attempt", 99.0, 9,
-                null, null, null, "hacked_url"
+                null, null, Set.of("WiFi"), "hacked_url"
         );
         assertThatThrownBy(() -> stadiumService.updateStadium(sharedStadiumId, request))
                 .isInstanceOf(ResourceNotFoundException.class)
@@ -314,7 +303,7 @@ class StadiumServiceTest {
     @Test
     void updateStadium_ShouldKeepOldData_WhenNewValuesAreNullOrInvalid() {
         StadiumRequestForUpdate invalidRequest = new StadiumRequestForUpdate(
-                null, -50.0, -10, null, null, null, "new_photo_url.com"
+                null, -50.0, -10, null, null, null, ""
         );
         setUpStadiumMocks();
 
@@ -327,7 +316,7 @@ class StadiumServiceTest {
         assertThat(updatedStadium.getName()).isEqualTo(sharedOriginalStadium.getName());
         assertThat(updatedStadium.getPricePerHour()).isEqualTo(500.0);
         assertThat(updatedStadium.getBallRentalFee()).isEqualTo(50);
-        assertThat(updatedStadium.getPhotoUrl()).isEqualTo("new_photo_url.com");
+        assertThat(updatedStadium.getPhotoUrl()).isEqualTo(sharedOriginalStadium.getPhotoUrl());
 
         assertThat(updatedStadium.getOpenTime()).isEqualTo(sharedOriginalStadium.getOpenTime());
         assertThat(updatedStadium.getCloseTime()).isEqualTo(sharedOriginalStadium.getCloseTime());

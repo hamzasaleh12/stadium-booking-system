@@ -4,7 +4,6 @@ import com.hamza.stadiumbooking.exception.ResourceNotFoundException;
 import com.hamza.stadiumbooking.user.User;
 import com.hamza.stadiumbooking.user.UserRepository;
 import com.hamza.stadiumbooking.security.utils.OwnershipValidationService;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -12,12 +11,14 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
-@Service @RequiredArgsConstructor @Slf4j
+@Service @RequiredArgsConstructor @Slf4j @Transactional(readOnly = true)
 public class StadiumService {
 
     private final StadiumRepository stadiumRepository;
@@ -51,17 +52,15 @@ public class StadiumService {
                 () -> new ResourceNotFoundException("Stadium linked to booking not found: " + id));
     }
 
+    @Transactional
     @CacheEvict(value = {"locations"}, allEntries = true)
     public StadiumResponse addStadium(StadiumRequest request) {
         log.info("Action: addStadium | Attempting to add new stadium: {}", request.name());
 
         Stadium stadium = mapToEntity(request);
 
-        UUID managerId = ownershipValidationService.getCurrentUserId();
-        if (managerId == null) {
-            log.error("Action: addStadium | Error: Current user ID is null");
-            throw new IllegalStateException("Error: Unable to determine the current user. User not authenticated.");
-        }
+        UUID managerId = Objects.requireNonNull(ownershipValidationService.getCurrentUserId(),
+                "Action: addStadium | Security Failure | User must be authenticated to add a stadium");
 
         User manger = userRepository.findByIdAndIsDeletedFalse(managerId).orElseThrow(
                 () -> {
@@ -105,7 +104,7 @@ public class StadiumService {
 
         if (request.name() != null && !request.name().isEmpty()) stadium.setName(request.name());
         if (request.photoUrl() != null && !request.photoUrl().isEmpty()) stadium.setPhotoUrl(request.photoUrl());
-        if (request.pricePerHour() != null && request.pricePerHour() > 0) stadium.setPricePerHour(request.pricePerHour());
+        if (request.pricePerHour() != null && request.pricePerHour() >= 0) stadium.setPricePerHour(request.pricePerHour());
         if (request.ballRentalFee() != null && request.ballRentalFee() >= 0) stadium.setBallRentalFee(request.ballRentalFee());
 
         if (request.openTime() != null) stadium.setOpenTime(request.openTime());
@@ -136,16 +135,17 @@ public class StadiumService {
     }
 
     private Stadium mapToEntity(StadiumRequest request) {
-        Stadium stadium = new Stadium();
-        stadium.setName(request.name());
-        stadium.setLocation(request.location());
-        stadium.setPhotoUrl(request.photoUrl());
-        stadium.setPricePerHour(request.pricePerHour());
-        stadium.setBallRentalFee(request.ballRentalFee() != null ? request.ballRentalFee() : 0);
-        stadium.setType(request.type());
-        stadium.setOpenTime(request.openTime());
-        stadium.setCloseTime(request.closeTime());
-        stadium.setFeatures(request.features() != null ? request.features() : new HashSet<>());
-        return stadium;
+        return Stadium.builder()
+                .name(request.name())
+                .location(request.location())
+                .photoUrl(request.photoUrl())
+                .pricePerHour(request.pricePerHour())
+                .ballRentalFee(request.ballRentalFee() != null ? request.ballRentalFee() : 0)
+                .type(request.type())
+                .openTime(request.openTime())
+                .closeTime(request.closeTime())
+                .features(request.features() != null ? request.features() : new HashSet<>())
+                .isDeleted(false)
+                .build();
     }
 }

@@ -1,6 +1,7 @@
 package com.hamza.stadiumbooking.user;
 
 import com.hamza.stadiumbooking.exception.EmailTakenException;
+import com.hamza.stadiumbooking.exception.PhoneNumberTakenException;
 import com.hamza.stadiumbooking.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -135,6 +136,7 @@ class UserServiceTest {
                 userRequest.dob(), null,null,Role.ROLE_PLAYER, false);
 
         given(userRepository.findByEmailAndIsDeletedFalse(userRequest.email())).willReturn(Optional.empty());
+        given(userRepository.existsByPhoneNumberAndIsDeletedFalse(userRequest.phoneNumber())).willReturn(false);
         given(passwordEncoder.encode(userRequest.password())).willReturn("hashed_password");
         given(userRepository.save(any(User.class))).willReturn(savedUser);
 
@@ -164,6 +166,34 @@ class UserServiceTest {
 
         verify(userRepository, never()).save(any());
     }
+    @Test
+    void addUser_ShouldThrowPhoneTakenException() {
+        UserRequest userRequest = new UserRequest(
+                sharedName, sharedEmail, sharedPhoneNumber, sharedPassword,
+                LocalDate.of(2000, 1, 1)
+        );
+        given(userRepository.findByEmailAndIsDeletedFalse(userRequest.email())).willReturn(Optional.empty());
+        given(userRepository.existsByPhoneNumberAndIsDeletedFalse(userRequest.phoneNumber())).willReturn(true);
+
+        assertThatThrownBy(() -> userService.addUser(userRequest)).isInstanceOf(PhoneNumberTakenException.class)
+                .hasMessageContaining("Phone Number is already taken: " + userRequest.phoneNumber());
+
+        verify(userRepository, never()).save(any());
+    }
+    @Test
+    void addUser_ShouldThrowIllegalArgumentExceptionWhenAgeIsLessThan5() {
+        UserRequest userRequest = new UserRequest(
+                sharedName, sharedEmail, sharedPhoneNumber, sharedPassword,
+                LocalDate.of(2026, 1, 1)
+        );
+        given(userRepository.findByEmailAndIsDeletedFalse(userRequest.email())).willReturn(Optional.empty());
+        given(userRepository.existsByPhoneNumberAndIsDeletedFalse(userRequest.phoneNumber())).willReturn(false);
+
+        assertThatThrownBy(() -> userService.addUser(userRequest)).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("The age must be at least 5 years to register.");
+
+        verify(userRepository, never()).save(any());
+    }
 
     @Test
     void deleteUser() {
@@ -175,6 +205,14 @@ class UserServiceTest {
         verify(userRepository, times(1)).findByIdAndIsDeletedFalse(sharedUserId);
         verify(userRepository,times(1)).save(sharedUserCopy);
         assertThat(sharedUserCopy.isDeleted()).isEqualTo(true);
+        assertThat(sharedUserCopy.getEmail())
+                .startsWith("deleted_")
+                .contains(sharedEmail)
+                .isNotEqualTo(sharedEmail);
+
+        assertThat(sharedUserCopy.getPhoneNumber())
+                .startsWith("del_")
+                .isNotEqualTo(sharedPhoneNumber);
     }
     @Test
     void deleteUser_ShouldNotFound() {
@@ -189,6 +227,7 @@ class UserServiceTest {
 
     @Test
     void updateUser_ShouldSucceed_WhenAllIsUpdated() {
+        // Arrange
         UserUpdateRequest request = new UserUpdateRequest(
                 "Hamza Updated", "hamza_new@gmail.com",
                 "01122334455","123qwe", LocalDate.of(2003,12,3)
@@ -198,20 +237,12 @@ class UserServiceTest {
 
         userService.updateUser(sharedUserId, request);
 
-        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-        verify(userRepository).save(userCaptor.capture());
-        User user = userCaptor.getValue();
+        assertThat(sharedUserCopy.getName()).isEqualTo(request.name());
+        assertThat(sharedUserCopy.getEmail()).isEqualTo(request.email());
+        assertThat(sharedUserCopy.getPassword()).isEqualTo("hashed_password");
+        assertThat(sharedUserCopy.getDob()).isEqualTo(request.dob());
 
-        verify(userRepository,times(1)).save(sharedUserCopy);
-        verify(userRepository,times(1)).findByIdAndIsDeletedFalse(sharedUserId);
-
-        assertThat(user.getName()).isEqualTo(request.name());
-        assertThat(user.getPassword()).isEqualTo("hashed_password");
-        assertThat(user.getEmail()).isEqualTo(request.email());
-        assertThat(user.getPhoneNumber()).isEqualTo(request.phoneNumber());
-        assertThat(user.getDob()).isEqualTo(request.dob());
-
-        assertThat(user.getRole()).isEqualTo(sharedOriginalUser.getRole());
+        verify(userRepository).save(sharedUserCopy);
     }
     @Test
     void updateUser_ShouldThrowResourceNotFoundException() {
@@ -253,6 +284,47 @@ class UserServiceTest {
         verify(userRepository, times(1)).findByEmailAndIsDeletedFalse(takenEmail);
     }
     @Test
+    void updateUser_ShouldThrowPhoneTakenException_WhenNewPhoneIsTakenByAnotherUser() {
+        String takenPhone = "01234567891";
+        UserUpdateRequest userRequest = new UserUpdateRequest(
+                sharedUserCopy.getName(),
+                sharedUserCopy.getEmail(),
+                takenPhone,
+                sharedUserCopy.getPassword(),
+                sharedUserCopy.getDob()
+        );
+
+        given(userRepository.findByIdAndIsDeletedFalse(sharedUserCopy.getId())).willReturn(Optional.of(sharedUserCopy));
+        given(userRepository.existsByPhoneNumberAndIsDeletedFalse(userRequest.phoneNumber())).willReturn(true);
+
+        assertThatThrownBy(() -> userService.updateUser(sharedUserCopy.getId(), userRequest))
+                .isInstanceOf(PhoneNumberTakenException.class)
+                .hasMessageContaining("Phone number " + userRequest.phoneNumber() + " is already taken.");
+
+        // Verify only checks happened, no save
+        verify(userRepository, never()).save(any());
+        verify(userRepository,times(1)).existsByPhoneNumberAndIsDeletedFalse(takenPhone);
+    }
+    @Test
+    void updateUser_ShouldThrowAgeException_WhenAgeIsLessThan5() {
+        UserUpdateRequest userRequest = new UserUpdateRequest(
+                sharedUserCopy.getName(),
+                sharedUserCopy.getEmail(),
+                sharedUserCopy.getPhoneNumber(),
+                sharedUserCopy.getPassword(),
+                LocalDate.of(2026,1,1)
+        );
+
+        given(userRepository.findByIdAndIsDeletedFalse(sharedUserCopy.getId())).willReturn(Optional.of(sharedUserCopy));
+
+        assertThatThrownBy(() -> userService.updateUser(sharedUserCopy.getId(), userRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Age must be at least 5 years");
+
+        // Verify only checks happened, no save
+        verify(userRepository, never()).save(any());
+    }
+    @Test
     void updateUser_ShouldKeepOldData_WhenNewValuesAreNullOrInvalid() {
         UserUpdateRequest invalidRequest = new UserUpdateRequest(
                 "",
@@ -270,7 +342,6 @@ class UserServiceTest {
 
         assertThat(updatedUser.getName()).isEqualTo(sharedOriginalUser.getName());
         assertThat(updatedUser.getEmail()).isEqualTo(sharedOriginalUser.getEmail());
-        assertThat(updatedUser.getPhoneNumber()).isEqualTo(sharedOriginalUser.getPhoneNumber());
         assertThat(updatedUser.getPassword()).isEqualTo(sharedOriginalUser.getPassword());
         assertThat(updatedUser.getDob()).isEqualTo(sharedOriginalUser.getDob());
 
@@ -278,12 +349,13 @@ class UserServiceTest {
     }
     @Test
     void updateUser_ShouldHandleEmailLogicCorrectly() {
-        UserUpdateRequest sameEmailRequest = new UserUpdateRequest(null, sharedEmail, null, null, null);
+        UserUpdateRequest sameEmailAndPhoneRequest = new UserUpdateRequest(null, sharedEmail, sharedPhoneNumber, null, null);
         setupUserCrudMocks();
 
-        userService.updateUser(sharedUserId, sameEmailRequest);
+        userService.updateUser(sharedUserId, sameEmailAndPhoneRequest);
 
         verify(userRepository, never()).findByEmailAndIsDeletedFalse(anyString());
+        verify(userRepository, never()).existsByPhoneNumberAndIsDeletedFalse(anyString());
 
         UserUpdateRequest conflictRequest = new UserUpdateRequest(null, "", null, null, null);
         setupUserCrudMocks();

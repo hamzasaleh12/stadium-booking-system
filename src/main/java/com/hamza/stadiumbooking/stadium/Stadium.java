@@ -15,12 +15,14 @@ import java.util.UUID;
 
 @Builder
 @Entity
-@Table(name = "stadiums")
 @Setter
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
+@Table(name = "users", indexes = {
+        @Index(name = "idx_user_email", columnList = "email", unique = true)
+})
 public class Stadium {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -78,4 +80,14 @@ public class Stadium {
     @LastModifiedDate
     @Column(insertable = false)
     private LocalDateTime updatedAt;
+
+    public boolean isOpenAt(LocalTime start, LocalTime end) {
+        if (closeTime.isAfter(openTime)) {
+            return !start.isBefore(openTime) && !end.isAfter(closeTime);
+        }
+        else {
+            if (start.isAfter(end)) return !start.isBefore(openTime) && !end.isAfter(closeTime);
+            else return !start.isBefore(openTime) || !end.isAfter(closeTime);
+        }
+    }
 }

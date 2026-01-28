@@ -38,6 +38,10 @@ public class StadiumController {
         return ResponseEntity.ok(stadiumService.getStadiumById(stadiumId));
     }
 
+    // TODO: Implement Search Feature (Phase 2) - Priority: Medium
+    // @GetMapping("/search")
+    // public ResponseEntity<PageResponse<StadiumResponse>> search(...) { ... }
+
     @GetMapping("/locations")
     public ResponseEntity<List<String>> getAllLocations() {
         log.info("Incoming request to get all stadium locations");

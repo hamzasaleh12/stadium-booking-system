@@ -19,7 +19,10 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-@Table(name = "bookings")
+@Table(name = "bookings", indexes = {
+        @Index(name = "idx_booking_overlap", columnList = "stadium_id, status, startTime, endTime"),
+        @Index(name = "idx_booking_user", columnList = "user_id")
+})
 public class Booking {
 
     @Id
@@ -67,5 +70,33 @@ public class Booking {
         if(startTime == null || endTime == null) return 0.0;
         long minutes = ChronoUnit.MINUTES.between(startTime, endTime);
         return minutes / 60.0;
+    }
+
+    public void calculateTotalPrice() {
+        double hours = this.getDuration();
+        this.totalPrice = (hours * stadium.getPricePerHour()) + stadium.getBallRentalFee();
+    }
+
+    public void validateDuration() {
+        if (startTime == null || endTime == null) return;
+
+        if (!endTime.isAfter(startTime)) {
+            throw new IllegalArgumentException("End time must be after start time.");
+        }
+
+        long minutes = ChronoUnit.MINUTES.between(startTime, endTime);
+        double hours = minutes / 60.0;
+
+        if (hours < 1.0) throw new IllegalArgumentException("You can't book for less than an hour.");
+        if (hours > 3.0) throw new IllegalArgumentException("Booking duration cannot exceed 3 hours");
+
+        if (minutes % 30 != 0) {
+            throw new IllegalArgumentException("The reservation must be for full hours or for half an hour only.");
+        }
+    }
+
+    public boolean isModificationWindowClosed() {
+        if (startTime == null) return true;
+        return LocalDateTime.now().plusHours(6).isAfter(this.startTime);
     }
 }

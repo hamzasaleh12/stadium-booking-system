@@ -52,7 +52,8 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     @Modifying(clearAutomatically = true)
     @Query("""
         UPDATE Booking b
-        SET b.status = 'COMPLETED'
+        SET b.status = 'COMPLETED',
+            b.updatedAt = :now
         WHERE b.status = 'CONFIRMED'
         AND b.endTime < :now
     """)

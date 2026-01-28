@@ -33,37 +33,17 @@ class StadiumRepositoryTest {
     @BeforeEach
     void setUp() {
         User user = new User(
-                null,
-                0L,
-                "hamza",
-                "manger@gmail.com",
-                "01000000000",
-                "securePassword123",
-                LocalDate.of(2000, 1, 1),
-                null,
-                null,
-                Role.ROLE_MANAGER,
-                false
+                null, 0L, "hamza", "manger@gmail.com",
+                "01000000000", "securePassword123", LocalDate.of(2000, 1, 1),
+                null, null, Role.ROLE_MANAGER, false
         );
         savedUser = userRepository.save(user);
 
         Stadium stadium = new Stadium(
-                null,
-                1L,
-                "AL-AHLY",
-                "Nasr-City",
-                500.00,
-                "image.com",
-                Type.ELEVEN_A_SIDE,
-                50,
-                LocalTime.of(10, 0),
-                LocalTime.of(23, 0),
-                null,
-                new HashSet<>(),
-                savedUser,
-                false,
-                null,
-                null
+                null, 1L, "AL-AHLY", "Nasr-City",
+                500.00, "image.com", Type.ELEVEN_A_SIDE, 50,
+                LocalTime.of(10, 0), LocalTime.of(23, 0), null,
+                new HashSet<>(), savedUser, false, null, null
         );
         savedStadium = stadiumRepository.save(stadium);
     }

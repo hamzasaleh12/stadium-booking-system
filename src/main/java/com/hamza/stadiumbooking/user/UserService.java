@@ -3,7 +3,7 @@ package com.hamza.stadiumbooking.user;
 import com.hamza.stadiumbooking.exception.EmailTakenException;
 import com.hamza.stadiumbooking.exception.PhoneNumberTakenException;
 import com.hamza.stadiumbooking.exception.ResourceNotFoundException;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -13,11 +13,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.Period;
-import java.util.Optional;
 import java.util.UUID;
 
 
-@Service @Slf4j @RequiredArgsConstructor
+@Service @Slf4j @RequiredArgsConstructor @Transactional(readOnly = true)
 public class UserService{
 
     private final UserRepository userRepository;
@@ -82,6 +81,12 @@ public class UserService{
                 });
 
         user.setDeleted(true);
+
+        // Masking
+        String suffix = "_" + UUID.randomUUID().toString().substring(0, 8);
+        user.setEmail("deleted" + suffix + "_" + user.getEmail());
+        user.setPhoneNumber("del" + suffix + "_" + user.getPhoneNumber());
+
         userRepository.save(user);
         log.info("Action: deleteUser | Success | User ID {} marked as deleted", userId);
     }
@@ -103,26 +108,21 @@ public class UserService{
             user.setName(request.name());
         }
 
-        if (request.email() != null && !request.email().isEmpty()) {
-            if (!request.email().equals(user.getEmail())) {
-                Optional<User> userWithSameEmail = userRepository.findByEmailAndIsDeletedFalse(request.email());
-                if (userWithSameEmail.isPresent()) {
-                    log.warn("Action: updateUser | Conflict | Email {} is already taken", request.email());
-                    throw new EmailTakenException("Email " + request.email() + " is already taken.");
-                }
-                user.setEmail(request.email());
+        if (request.email() != null && !request.email().isEmpty() && !request.email().equals(user.getEmail())) {
+            if (userRepository.findByEmailAndIsDeletedFalse(request.email()).isPresent()) {
+                log.warn("Action: updateUser | Conflict | Email {} is already taken", request.email());
+                throw new EmailTakenException("Email " + request.email() + " is already taken.");
             }
+            user.setEmail(request.email());
         }
 
-        if (request.phoneNumber() != null && request.phoneNumber().length() == 11) {
-            if (!request.phoneNumber().equals(user.getPhoneNumber())) {
+        if (request.phoneNumber() != null && !request.phoneNumber().equals(user.getPhoneNumber())) {
                 if (userRepository.existsByPhoneNumberAndIsDeletedFalse(request.phoneNumber())) {
                     log.warn("Action: updateUser | Conflict | Phone {} is already taken", request.phoneNumber());
                     throw new PhoneNumberTakenException("Phone number " + request.phoneNumber() + " is already taken.");
                 }
                 user.setPhoneNumber(request.phoneNumber());
             }
-        }
 
         if (request.dob() != null) {
             int age = Period.between(request.dob(), LocalDate.now()).getYears();
@@ -138,6 +138,7 @@ public class UserService{
         return mapToDto(savedUser);
     }
 
+    @Transactional
     public UserResponse changeUserRole(UUID userId, String newRoleAsString) {
         User user = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> {
@@ -169,12 +170,12 @@ public class UserService{
     }
 
     private User mapToEntity(UserRequest request) {
-        User user = new User();
-        user.setName(request.name());
-        user.setEmail(request.email());
-        user.setPhoneNumber(request.phoneNumber());
-        user.setPassword(request.password());
-        user.setDob(request.dob());
-        return user;
+        return User.builder()
+                .name(request.name())
+                .email(request.email())
+                .phoneNumber(request.phoneNumber())
+                .password(request.password())
+                .dob(request.dob())
+                .build();
     }
 }

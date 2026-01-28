@@ -65,6 +65,7 @@ public class User {
     @Builder.Default
     private boolean isDeleted = false;
 
+    @Transient
     public Integer getAge(){
         return Period.between(dob,LocalDate.now()).getYears();
     }
