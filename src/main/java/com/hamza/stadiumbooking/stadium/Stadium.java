@@ -20,8 +20,8 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-@Table(name = "users", indexes = {
-        @Index(name = "idx_user_email", columnList = "email", unique = true)
+@Table(name = "stadiums", indexes = {
+        @Index(name = "idx_stadium_location", columnList = "location")
 })
 public class Stadium {
     @Id
@@ -47,7 +47,8 @@ public class Stadium {
     @Column(nullable = false)
     private Type type;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "int default 0")
+    @Builder.Default
     private Integer ballRentalFee = 0;
 
     @Column(nullable = false)
