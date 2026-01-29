@@ -7,4 +7,4 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 7860
-ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -Dserver.port=7860 -jar app.jar"]
+ENTRYPOINT ["java", "-Dserver.port=7860", "-jar", "app.jar"]

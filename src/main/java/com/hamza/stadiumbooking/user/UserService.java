@@ -16,7 +16,8 @@ import java.time.Period;
 import java.util.UUID;
 
 
-@Service @Slf4j @RequiredArgsConstructor @Transactional(readOnly = true)
+@Service @Slf4j @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class UserService{
 
     private final UserRepository userRepository;

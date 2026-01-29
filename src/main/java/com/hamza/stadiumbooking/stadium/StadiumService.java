@@ -18,7 +18,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-@Service @RequiredArgsConstructor @Slf4j @Transactional(readOnly = true)
+@Service @RequiredArgsConstructor @Slf4j
+@Transactional(readOnly = true)
 public class StadiumService {
 
     private final StadiumRepository stadiumRepository;
@@ -62,14 +63,14 @@ public class StadiumService {
         UUID managerId = Objects.requireNonNull(ownershipValidationService.getCurrentUserId(),
                 "Action: addStadium | Security Failure | User must be authenticated to add a stadium");
 
-        User manger = userRepository.findByIdAndIsDeletedFalse(managerId).orElseThrow(
+        User manager = userRepository.findByIdAndIsDeletedFalse(managerId).orElseThrow(
                 () -> {
                     log.error("Action: addStadium | Error: Manager ID {} not found", managerId);
                     return new ResourceNotFoundException("Manager not found with ID: " + managerId);
                 }
         );
 
-        stadium.setOwner(manger);
+        stadium.setOwner(manager);
         Stadium savedStadium = stadiumRepository.save(stadium);
 
         log.info("Action: addStadium | Success | Stadium created with ID: {}", savedStadium.getId());

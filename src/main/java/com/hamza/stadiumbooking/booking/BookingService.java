@@ -17,9 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Slf4j
-@Service
-@RequiredArgsConstructor
+
+@Service @Slf4j @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class BookingService {
 

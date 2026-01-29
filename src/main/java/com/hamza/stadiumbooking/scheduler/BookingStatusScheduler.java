@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 public class BookingStatusScheduler {
     private final BookingRepository bookingRepository;
 
-    @Scheduled(fixedRate = 1800000, initialDelay = 60000)
+    @Scheduled(fixedDelay = 1800000, initialDelay = 60000)
     @Transactional
     public void completeFinishedBookings() {
         try {
@@ -25,7 +25,7 @@ public class BookingStatusScheduler {
                 log.info("Job executed: Moved {} bookings to COMPLETED status at {}", updatedCount, now);
             }
         } catch (Exception e) {
-            log.warn("⚠️ Scheduler skipped: Database tables might still be initializing. Error: {}", e.getMessage());
+            log.error("❌ Error during booking status update task: {}", e.getMessage());
         }
     }
 }
