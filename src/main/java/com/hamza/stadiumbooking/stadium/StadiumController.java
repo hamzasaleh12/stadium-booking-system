@@ -28,13 +28,13 @@ public class StadiumController {
     @GetMapping
     public ResponseEntity<Page<StadiumResponse>> getAllStadiums(@ParameterObject
                                                                 @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable){
-        log.info("Incoming request to get all stadiums | Page: {}", pageable.getPageNumber());
+        log.debug("Incoming request to get all stadiums | Page: {}", pageable.getPageNumber());
         return ResponseEntity.ok(stadiumService.getAllStadiums(pageable));
     }
 
     @GetMapping("/{stadiumId}")
     public ResponseEntity<StadiumResponse> getStadiumById(@PathVariable UUID stadiumId) {
-        log.info("Incoming request to get stadium with ID: {}", stadiumId);
+        log.debug("Incoming request to get stadium with ID: {}", stadiumId);
         return ResponseEntity.ok(stadiumService.getStadiumById(stadiumId));
     }
 
@@ -44,7 +44,7 @@ public class StadiumController {
 
     @GetMapping("/locations")
     public ResponseEntity<List<String>> getAllLocations() {
-        log.info("Incoming request to get all stadium locations");
+        log.debug("Incoming request to get all stadium locations");
         return ResponseEntity.ok(stadiumService.getAllLocations());
     }
 

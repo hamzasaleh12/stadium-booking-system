@@ -15,3 +15,6 @@ HELP.md
 mvnw
 mvnw.cmd
 .mvn/
+.env
+docker-compose.override.yml
+.git
