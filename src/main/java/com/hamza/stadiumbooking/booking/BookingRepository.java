@@ -51,9 +51,9 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
             @Param("endTime") LocalDateTime endTime
     );
     @Query("SELECT b.id FROM Booking b WHERE b.status = 'CONFIRMED' AND b.endTime < :now")
-    List<Long> findExpiredBookingIds(@Param("now") LocalDateTime now);
+    List<UUID> findExpiredBookingIds(@Param("now") LocalDateTime now);
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE Booking b SET b.status = 'COMPLETED', b.updatedAt = CURRENT_TIMESTAMP WHERE b.id IN :ids")
-    void updateStatusToCompleted(@Param("ids") List<Long> ids);
+    void updateStatusToCompleted(@Param("ids") List<UUID> ids);
 }

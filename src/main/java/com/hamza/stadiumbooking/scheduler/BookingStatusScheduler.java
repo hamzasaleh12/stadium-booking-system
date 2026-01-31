@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Component
 @Slf4j
@@ -21,7 +22,7 @@ public class BookingStatusScheduler {
     public void completeFinishedBookings() {
         try {
             LocalDateTime now = LocalDateTime.now();
-            List<Long> expiredIds = bookingRepository.findExpiredBookingIds(now);
+            List<UUID> expiredIds = bookingRepository.findExpiredBookingIds(now);
             if (!expiredIds.isEmpty()) {
                 log.info("🔔 Update Job: {} bookings found expired and moved to COMPLETED at {}", expiredIds.size(), now);
 

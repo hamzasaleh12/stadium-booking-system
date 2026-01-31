@@ -17,6 +17,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.HashSet;
+import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -32,25 +34,25 @@ class BookingRepositoryTest {
     private User savedUser;
     private Stadium savedStadium;
     private Booking booking1;
-    private final LocalDateTime T0 = LocalDateTime.of(2027, 1, 1, 10, 0);
+    private final LocalDateTime T0 = LocalDateTime.of(2026, 1, 1, 10, 0);
 
     @BeforeEach
     void setUp() {
         User user = new User(
-                null, 0L, "hamza", "manger@gmail.com", "01000000000",
+                null, null, "hamza", "manger@gmail.com", "01000000000",
                 "securePass", LocalDate.now(), null, null, Role.ROLE_PLAYER, false
         );
         savedUser = userRepository.save(user);
 
         Stadium stadium = new Stadium(
-                null, 0L, "AL-AHLY", "Nasr_city", 500.00, "image.com",
+                null, null, "AL-AHLY", "Nasr_city", 500.00, "image.com",
                 Type.ELEVEN_A_SIDE, 50, LocalTime.of(9, 0), LocalTime.of(23, 0),
                 null, new HashSet<>(), savedUser, false, null, null
         );
         savedStadium = stadiumRepository.save(stadium);
 
         booking1 = new Booking(
-                null, 0L, T0, T0.plusHours(2), 550.00, "Note",
+                null, null, T0, T0.plusHours(2), 550.00, "Note",
                 savedUser, savedStadium, BookingStatus.CONFIRMED, null, null
         );
     }
@@ -58,7 +60,7 @@ class BookingRepositoryTest {
     @Test
     void findByUserId() {
         Booking booking2 = new Booking(
-                null, 0L, T0.plusHours(2), T0.plusHours(3), 550.00, "Note",
+                null, null, T0.plusHours(2), T0.plusHours(3), 550.00, "Note",
                 savedUser, savedStadium, BookingStatus.CONFIRMED, null, null
         );
         bookingRepository.save(booking1);
@@ -80,7 +82,7 @@ class BookingRepositoryTest {
     @Test
     void findByStadiumId() {
         Booking booking2 = new Booking(
-                null, 0L, T0.plusHours(2), T0.plusHours(3), 550.00, "Note",
+                null, null, T0.plusHours(2), T0.plusHours(3), 550.00, "Note",
                 savedUser, savedStadium, BookingStatus.CONFIRMED, null, null
         );
         bookingRepository.save(booking1);
@@ -96,7 +98,7 @@ class BookingRepositoryTest {
     @Test
     void findByUserIdAndStadiumId() {
         Booking booking2 = new Booking(
-                null, 0L, T0.plusHours(2), T0.plusHours(3), 550.00, "Note",
+                null, null, T0.plusHours(2), T0.plusHours(3), 550.00, "Note",
                 savedUser, savedStadium, BookingStatus.CONFIRMED, null, null
         );
         bookingRepository.save(booking1);
@@ -114,7 +116,7 @@ class BookingRepositoryTest {
     @Test
     void findAllByUserId() {
         Booking booking2 = new Booking(
-                null, 0L, T0.plusHours(2), T0.plusHours(3), 550.00, "Note",
+                null, null, T0.plusHours(2), T0.plusHours(3), 550.00, "Note",
                 savedUser, savedStadium, BookingStatus.CONFIRMED, null, null
         );
         Booking savedBooking = bookingRepository.save(booking1);
@@ -132,7 +134,7 @@ class BookingRepositoryTest {
     @Test
     void testFindConflictingBookingsForNew() {
         Booking booking2 = new Booking(
-                null, 0L, T0, T0.plusHours(3), 550.00, "Note",
+                null, null, T0, T0.plusHours(3), 550.00, "Note",
                 savedUser, savedStadium, BookingStatus.CONFIRMED, null, null
         );
         Booking savedBooking = bookingRepository.save(booking1);
@@ -206,7 +208,7 @@ class BookingRepositoryTest {
     @Test
     void updateExpiredBookings_ShouldMarkPastBookingsAsCompleted() {
         Booking expiredBooking = new Booking(
-                null, 0L, T0.minusDays(1), T0.minusDays(1).plusHours(1), 500.0, "Note",
+                null, null , T0.minusDays(1), T0.minusDays(1).plusHours(1), 500.0, "Note",
                 savedUser, savedStadium, BookingStatus.CONFIRMED, null, null
         );
         Booking savedExpiredBooking = bookingRepository.save(expiredBooking);
@@ -215,9 +217,12 @@ class BookingRepositoryTest {
         booking1.setEndTime(T0.plusDays(1).plusHours(1));
         bookingRepository.save(booking1);
 
-        int updatedCount = bookingRepository.updateExpiredBookings(T0);
+        List<UUID> expiredBookingIds = bookingRepository.findExpiredBookingIds(T0);
 
-        assertThat(updatedCount).isEqualTo(1);
+        assertThat(expiredBookingIds).hasSize(1).contains(savedExpiredBooking.getId());
+
+        bookingRepository.updateStatusToCompleted(expiredBookingIds);
+
         Booking checkBooking = bookingRepository.findById(savedExpiredBooking.getId()).get();
         assertThat(checkBooking.getStatus()).isEqualTo(BookingStatus.COMPLETED);
     }
