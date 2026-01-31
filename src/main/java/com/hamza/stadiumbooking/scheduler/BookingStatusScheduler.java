@@ -8,6 +8,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Component
 @Slf4j
@@ -15,14 +16,18 @@ import java.time.LocalDateTime;
 public class BookingStatusScheduler {
     private final BookingRepository bookingRepository;
 
-    @Scheduled(fixedDelay = 1800000, initialDelay = 60000)
+    @Scheduled(fixedDelay = 3600000, initialDelay = 60000)
     @Transactional
     public void completeFinishedBookings() {
         try {
             LocalDateTime now = LocalDateTime.now();
-            int updatedCount = bookingRepository.updateExpiredBookings(now);
-            if (updatedCount > 0) {
-                log.info("Job executed: Moved {} bookings to COMPLETED status at {}", updatedCount, now);
+            List<Long> expiredIds = bookingRepository.findExpiredBookingIds(now);
+            if (!expiredIds.isEmpty()) {
+                log.info("🔔 Update Job: {} bookings found expired and moved to COMPLETED at {}", expiredIds.size(), now);
+
+                log.debug("Detailed IDs for completed bookings: {}", expiredIds);
+
+                bookingRepository.updateStatusToCompleted(expiredIds);
             }
         } catch (Exception e) {
             log.error("❌ Error during booking status update task: {}", e.getMessage());

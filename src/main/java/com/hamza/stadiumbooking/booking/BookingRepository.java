@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID; // MODIFIED: Import UUID
 
 @Repository
@@ -49,13 +50,10 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime
     );
-    @Modifying(clearAutomatically = true)
-    @Query("""
-        UPDATE Booking b
-        SET b.status = 'COMPLETED',
-            b.updatedAt = :now
-        WHERE b.status = 'CONFIRMED'
-        AND b.endTime < :now
-    """)
-    int updateExpiredBookings(@Param("now") LocalDateTime now);
+    @Query("SELECT b.id FROM Booking b WHERE b.status = 'CONFIRMED' AND b.endTime < :now")
+    List<Long> findExpiredBookingIds(@Param("now") LocalDateTime now);
+
+    @Modifying
+    @Query("UPDATE Booking b SET b.status = 'COMPLETED', b.updatedAt = CURRENT_TIMESTAMP WHERE b.id IN :ids")
+    void updateStatusToCompleted(@Param("ids") List<Long> ids);
 }
