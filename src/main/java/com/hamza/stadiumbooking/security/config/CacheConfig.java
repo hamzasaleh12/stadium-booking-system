@@ -1,6 +1,7 @@
 package com.hamza.stadiumbooking.security.config;
 
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
@@ -32,22 +33,22 @@ public class CacheConfig {
     public CacheErrorHandler cacheErrorHandler() {
         return new CacheErrorHandler() {
             @Override
-            public void handleCacheGetError(RuntimeException e, org.springframework.cache.Cache cache, Object key) {
+            public void handleCacheGetError(@NonNull RuntimeException e, org.springframework.cache.@NonNull Cache cache, @NonNull Object key) {
                 log.warn("Cache GET error on {}:{} -> {}", cache.getName(), key, e.getMessage());
             }
 
             @Override
-            public void handleCachePutError(RuntimeException e, org.springframework.cache.Cache cache, Object key, Object value) {
+            public void handleCachePutError(@NonNull RuntimeException e, org.springframework.cache.@NonNull Cache cache, @NonNull Object key, Object value) {
                 log.warn("Cache PUT error on {}:{} -> {}", cache.getName(), key, e.getMessage());
             }
 
             @Override
-            public void handleCacheEvictError(RuntimeException e, org.springframework.cache.Cache cache, Object key) {
+            public void handleCacheEvictError(@NonNull RuntimeException e, org.springframework.cache.@NonNull Cache cache, @NonNull Object key) {
                 log.warn("Cache EVICT error on {}:{} -> {}", cache.getName(), key, e.getMessage());
             }
 
             @Override
-            public void handleCacheClearError(RuntimeException e, org.springframework.cache.Cache cache) {
+            public void handleCacheClearError(@NonNull RuntimeException e, org.springframework.cache.@NonNull Cache cache) {
                 log.warn("Cache CLEAR error on {} -> {}", cache.getName(), e.getMessage());
             }
         };

@@ -130,7 +130,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
     public ResponseEntity<Object> handleConcurrencyFailure(ObjectOptimisticLockingFailureException e) {
-        return error("The data was updated by another user. Please refresh and try again , for details: " + e.getMessage(), HttpStatus.CONFLICT);
+        log.warn("Concurrency conflict detected: {}", e.getMessage());
+        return error("The record was updated by another user. Please refresh and try again.", HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
@@ -141,8 +142,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<Object> handleDataAccess(DataAccessException e) {
-        log.error("Database access error", e);
-        return error("Database error: " + e.getMessage(), HttpStatus.SERVICE_UNAVAILABLE);
+        log.error("Database error: ", e);
+        return error("Service temporarily unavailable due to database error.", HttpStatus.SERVICE_UNAVAILABLE);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
