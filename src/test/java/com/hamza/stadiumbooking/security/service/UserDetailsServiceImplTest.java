@@ -55,6 +55,7 @@ class UserDetailsServiceImplTest {
         assertThat(userDetails).isNotNull();
         assertThat(userDetails.getUsername()).isEqualTo(sharedEmail);
         assertThat(userDetails.getPassword()).isEqualTo(sharedUser.getPassword());
+        assertThat(((CustomUserDetails) userDetails).getId()).isEqualTo(sharedUser.getId());
 
         assertThat(userDetails.getAuthorities())
                 .extracting(GrantedAuthority::getAuthority)

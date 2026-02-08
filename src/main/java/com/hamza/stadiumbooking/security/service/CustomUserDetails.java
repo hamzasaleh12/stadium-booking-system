@@ -15,6 +15,7 @@ public class CustomUserDetails implements UserDetails {
     private UUID id;
     private String username;
     private String password;
+    private boolean isDeleted;
     private Collection<? extends GrantedAuthority> authorities;
 
     @Override
@@ -42,5 +43,5 @@ public class CustomUserDetails implements UserDetails {
     public boolean isCredentialsNonExpired() { return true; }
 
     @Override
-    public boolean isEnabled() { return true; }
+    public boolean isEnabled() {return !isDeleted;}
 }
