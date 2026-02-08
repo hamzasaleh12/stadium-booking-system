@@ -57,7 +57,7 @@ public class StadiumController {
     }
 
     @DeleteMapping("/{stadiumId}")
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('MANAGER') and @ownershipValidationService.isStadiumOwner(#stadiumId))")
+    @PreAuthorize("@ownershipValidationService.isStadiumOwner(#stadiumId)")
     public ResponseEntity<Void> deleteStadium(@PathVariable UUID stadiumId) {
         log.info("Incoming request to delete stadium ID: {} by User ID: {}",
                 stadiumId, ownershipValidationService.getCurrentUserId());
@@ -66,7 +66,7 @@ public class StadiumController {
     }
 
     @PutMapping("/{stadiumId}")
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('MANAGER') and @ownershipValidationService.isStadiumOwner(#stadiumId))")
+    @PreAuthorize("@ownershipValidationService.isStadiumOwner(#stadiumId)")
     public ResponseEntity<StadiumResponse> updateStadium(
             @PathVariable UUID stadiumId,
             @RequestBody @Valid StadiumRequestForUpdate stadiumRequestForUpdate
