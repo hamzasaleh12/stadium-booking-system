@@ -17,19 +17,20 @@ public class AuthenticationService {
     private final UserRepository userRepository;
     private final JwtUtils jwtUtils;
 
-    public AuthenticationResponse refreshToken(RefreshTokenRequest request) {
-        DecodedJWT decodedJWT = jwtUtils.decodedJWT(request.token());
+    public AuthenticationResponse refreshToken(String refreshToken) {
+        DecodedJWT decodedJWT = jwtUtils.decodedJWT(refreshToken, "REFRESH");
+
         String email = decodedJWT.getSubject();
         User user = userRepository.findByEmailAndIsDeletedFalse(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        List<String> roles = List.of(user.getRole().name());
         String newAccessToken = jwtUtils.createAccessToken(
                 user.getEmail(),
                 user.getId(),
-                decodedJWT.getIssuer(),
-                roles
+                user.isDeleted(),
+                List.of(user.getRole().name())
         );
-        return new AuthenticationResponse(newAccessToken, request.token());
+
+        return new AuthenticationResponse(newAccessToken);
     }
 }
