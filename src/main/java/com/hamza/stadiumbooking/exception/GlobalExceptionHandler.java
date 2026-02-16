@@ -15,6 +15,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingPathVariableException;
+import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -66,6 +67,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handleJwtErrors(Exception e) {
         log.warn("JWT auth failed", e);
         return error("Authentication failed: " + e.getMessage(), HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(MissingRequestCookieException.class)
+    public ResponseEntity<Object> handleMissingCookie(MissingRequestCookieException ex) {
+        return error("Missing cookie: " + ex.getCookieName(), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(AuthenticationException.class)

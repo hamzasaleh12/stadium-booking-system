@@ -17,7 +17,7 @@ import java.util.UUID;
 public class BookingStatusScheduler {
     private final BookingRepository bookingRepository;
 
-    @Scheduled(fixedDelay = 3600000, initialDelay = 60000)
+    @Scheduled(fixedDelay = 3600000)
     @Transactional
     public void completeFinishedBookings() {
         try {
