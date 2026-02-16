@@ -17,6 +17,7 @@ jobs:
         with:
          java-version: '21'
          distribution: 'corretto'
+         cache: 'maven'
 
       - name: Run Unit Tests
         run: mvn test -Dtest=!*ApplicationTests
@@ -32,7 +33,9 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/stadium-app:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/stadium-app:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/stadium-app:v${{ github.run_number }}
 
       - name: Restart Hugging Face Space
         run: |
