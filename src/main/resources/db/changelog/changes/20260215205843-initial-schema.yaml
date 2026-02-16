@@ -1,0 +1,214 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260216-01-users
+      author: hamza
+      changes:
+        - createTable:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  type: binary(16)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                    primaryKeyName: pk_users
+              - column:
+                  name: version
+                  type: BIGINT
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: email
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: phone_number
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: password
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: dob
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role
+                  type: VARCHAR(50)
+                  defaultValue: "ROLE_PLAYER"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_deleted
+                  type: BIT(1)
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: DATETIME
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: DATETIME
+
+  - changeSet:
+      id: 20260216-02-stadiums
+      author: hamza
+      changes:
+        - createTable:
+            tableName: stadiums
+            columns:
+              - column:
+                  name: id
+                  type: binary(16)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                    primaryKeyName: pk_stadiums
+              - column:
+                  name: version
+                  type: BIGINT
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: location
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: price_per_hour
+                  type: DOUBLE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: photo_url
+                  type: VARCHAR(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: type
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ball_rental_fee
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: open_time
+                  type: TIME
+                  constraints:
+                    nullable: false
+              - column:
+                  name: close_time
+                  type: TIME
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_lock_at
+                  type: DATETIME
+              - column:
+                  name: owner_id
+                  type: binary(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_deleted
+                  type: BIT(1)
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: DATETIME
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: DATETIME
+
+  - changeSet:
+      id: 20260216-03-bookings
+      author: hamza
+      changes:
+        - createTable:
+            tableName: bookings
+            columns:
+              - column:
+                  name: id
+                  type: binary(16)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                    primaryKeyName: pk_bookings
+              - column: { name: version, type: BIGINT }
+              - column: { name: start_time, type: DATETIME, constraints: { nullable: false } }
+              - column: { name: end_time, type: DATETIME, constraints: { nullable: false } }
+              - column: { name: total_price, type: DOUBLE, constraints: { nullable: false } }
+              - column: { name: note, type: VARCHAR(500) }
+              - column: { name: status, type: VARCHAR(50), defaultValue: "CONFIRMED", constraints: { nullable: false } }
+              - column: { name: user_id, type: binary(16), constraints: { nullable: false } }
+              - column: { name: stadium_id, type: binary(16), constraints: { nullable: false } }
+              - column: { name: created_at, type: DATETIME, constraints: { nullable: false } }
+              - column: { name: updated_at, type: DATETIME }
+
+  - changeSet:
+      id: 20260216-04-stadium_features
+      author: hamza
+      changes:
+        - createTable:
+            tableName: stadium_features
+            columns:
+              - column: { name: stadium_id, type: binary(16), constraints: { nullable: false } }
+              - column: { name: feature, type: VARCHAR(255), constraints: { nullable: false } }
+        - addPrimaryKey:
+            tableName: stadium_features
+            columnNames: stadium_id, feature
+            constraintName: pk_stadium_features
+
+  - changeSet:
+      id: 20260216-05-indexes-and-constraints
+      author: hamza
+      changes:
+        - addUniqueConstraint: { tableName: users, columnNames: email, constraintName: uk_user_email }
+        - addUniqueConstraint: { tableName: users, columnNames: phone_number, constraintName: uk_user_phone }
+
+        - createIndex:
+            tableName: bookings
+            indexName: idx_booking_overlap
+            columns:
+              - column: { name: stadium_id }
+              - column: { name: status }
+              - column: { name: start_time }
+              - column: { name: end_time }
+        - createIndex:
+            tableName: bookings
+            indexName: idx_booking_user
+            columns:
+              - column: { name: user_id }
+        - createIndex:
+            tableName: stadiums
+            indexName: idx_stadium_location
+            columns:
+              - column: { name: location }
+
+        - addForeignKeyConstraint: { baseTableName: bookings, baseColumnNames: stadium_id, referencedTableName: stadiums, referencedColumnNames: id, constraintName: fk_bookings_stadium }
+        - addForeignKeyConstraint: { baseTableName: bookings, baseColumnNames: user_id, referencedTableName: users, referencedColumnNames: id, constraintName: fk_bookings_user }
+        - addForeignKeyConstraint: { baseTableName: stadiums, baseColumnNames: owner_id, referencedTableName: users, referencedColumnNames: id, constraintName: fk_stadiums_owner }
+        - addForeignKeyConstraint: { baseTableName: stadium_features, baseColumnNames: stadium_id, referencedTableName: stadiums, referencedColumnNames: id, constraintName: fk_stadium_features_stadium }

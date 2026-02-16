@@ -2,24 +2,35 @@ services:
   db:
     image: mysql:8.0
     container_name: stadium-db
-    restart: always
+    restart: "no"
     environment:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   cache:
     image: redis:alpine
     container_name: stadium-redis
-    restart: always
+    restart: "no"
     command: redis-server --requirepass ${REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   app:
     build: .
     container_name: stadium-app
     ports:
       - "8080:7860"
+    restart: "no"
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/${DB_NAME}?serverTimezone=Africa/Cairo
       SPRING_DATASOURCE_USERNAME: ${DB_USER}
@@ -27,10 +38,12 @@ services:
       SPRING_DATA_REDIS_HOST: cache
       SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
-      SPRING_PROFILES_ACTIVE:
+      SPRING_PROFILES_ACTIVE: local
     depends_on:
-      - db
-      - cache
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
 
 volumes:
   mysql_data:
