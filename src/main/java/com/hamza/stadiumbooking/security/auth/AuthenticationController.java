@@ -12,7 +12,12 @@ public class AuthenticationController {
     private final AuthenticationService authenticationService;
 
     @PostMapping("/refresh-token")
-    public ResponseEntity<AuthenticationResponse> refreshToken(@CookieValue(name = "refresh_token") String refreshToken) {
+    public ResponseEntity<AuthenticationResponse> refreshToken(
+            @CookieValue(name = "refresh_token", required = false) String refreshToken) {
+
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new IllegalArgumentException("Missing refresh token cookie.");
+        }
         return ResponseEntity.ok(authenticationService.refreshToken(refreshToken));
     }
 }
