@@ -1,6 +1,7 @@
 HELP.md
 target/
 .mvn/wrapper/maven-wrapper.jar
+deps.txt
 
 ### STS ###
 .apt_generated
