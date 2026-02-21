@@ -1,11 +1,12 @@
 package com.hamza.stadiumbooking;
 
+import com.hamza.stadiumbooking.base.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class StadiumBookingSystemApplicationTests {
+class StadiumBookingSystemApplicationTests extends AbstractIntegrationTest{
+
     @Test
-    void test() {
+    void contextLoads() {
     }
+
 }

@@ -2,13 +2,13 @@ FROM maven:3.9-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 
 COPY pom.xml .
-RUN mvn dependency:go-offline
+RUN mvn -q dependency:go-offline
 
 COPY src ./src
-RUN mvn clean package -DskipTests
+RUN mvn -q clean package spring-boot:repackage -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-COPY --from=build /app/target/stadium-app.jar app.jar
+COPY --from=build /app/target/*.jar app.jar
 EXPOSE 7860
 ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-Dserver.port=7860", "-jar", "app.jar"]
