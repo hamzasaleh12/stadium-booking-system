@@ -1,5 +1,6 @@
 package com.hamza.stadiumbooking.security.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hamza.stadiumbooking.security.jwt.CustomAuthenticationFilter;
 import com.hamza.stadiumbooking.security.jwt.JwtAuthorizationFilter;
 import com.hamza.stadiumbooking.security.jwt.JwtUtils;
@@ -33,10 +34,13 @@ public class SecurityConfig {
 
     private final JwtUtils utils;
     private final HandlerExceptionResolver exceptionResolver;
+    private final ObjectMapper objectMapper;
 
     public SecurityConfig(JwtUtils utils,
+                          ObjectMapper objectMapper,
                           @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver) {
         this.utils = utils;
+        this.objectMapper = objectMapper;
         this.exceptionResolver = exceptionResolver;
     }
 
@@ -66,7 +70,7 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable);
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));// السيرفر ستاتليس اهوه
 
-        CustomAuthenticationFilter customAuthenticationFilter = new CustomAuthenticationFilter(authenticationManager, utils,exceptionResolver);
+        CustomAuthenticationFilter customAuthenticationFilter = new CustomAuthenticationFilter(authenticationManager, utils,exceptionResolver,objectMapper);
         customAuthenticationFilter.setFilterProcessesUrl("/api/v1/login");
 
         http.authorizeHttpRequests(auth -> auth
