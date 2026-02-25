@@ -26,27 +26,36 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
 
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 
-@RequiredArgsConstructor @Slf4j
+@Slf4j
 public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFilter{
 
-    private final AuthenticationManager authenticationManager;
     private final JwtUtils utils;
     private final HandlerExceptionResolver exceptionResolver;
-    private static final ObjectMapper mapper = new ObjectMapper();
-    static {
-        mapper.configure(FAIL_ON_UNKNOWN_PROPERTIES, false);
-    }
+    private final ObjectMapper mapper;
 
+    public CustomAuthenticationFilter(AuthenticationManager authenticationManager, JwtUtils utils,
+                                      HandlerExceptionResolver exceptionResolver, ObjectMapper mapper) {
+
+        super.setAuthenticationManager(authenticationManager);
+        this.utils = utils;
+        this.exceptionResolver = exceptionResolver;
+        this.mapper = mapper;
+    }
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
         try {
-            LoginRequest loginRequest = mapper.readValue(request.getInputStream(),LoginRequest.class);
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(loginRequest.email(),loginRequest.password());
-            return authenticationManager.authenticate(authenticationToken);
+            LoginRequest loginRequest = mapper.readValue(request.getInputStream(), LoginRequest.class);
+
+            UsernamePasswordAuthenticationToken authenticationToken =
+                    new UsernamePasswordAuthenticationToken(loginRequest.email(), loginRequest.password());
+
+            setDetails(request, authenticationToken);
+
+            return this.getAuthenticationManager().authenticate(authenticationToken);
         } catch (IOException e) {
+            log.error("Error parsing login request: {}", e.getMessage());
             throw new AuthenticationServiceException("Failed to parse login request", e);
         }
     }
