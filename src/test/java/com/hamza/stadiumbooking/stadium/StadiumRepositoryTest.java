@@ -1,15 +1,15 @@
 package com.hamza.stadiumbooking.stadium;
 
+import com.hamza.stadiumbooking.base.AbstractIntegrationTest;
 import com.hamza.stadiumbooking.user.Role;
 import com.hamza.stadiumbooking.user.User;
 import com.hamza.stadiumbooking.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -20,8 +20,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DataJpaTest @ActiveProfiles("h2")
-class StadiumRepositoryTest {
+@Transactional
+class StadiumRepositoryTest extends AbstractIntegrationTest {
 
     @Autowired
     private StadiumRepository stadiumRepository;
