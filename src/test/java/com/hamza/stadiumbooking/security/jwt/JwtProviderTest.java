@@ -17,14 +17,14 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 
-class JwtUtilsTest {
-    private JwtUtils jwtUtils;
+class JwtProviderTest {
+    private JwtProvider jwtProvider;
     private final String secret = "secret1234567890secret1234567890";
     private final String issuer = "stadium_booking_system";
 
     @BeforeEach
     void setUp() {
-        jwtUtils = new JwtUtils(secret, issuer);
+        jwtProvider = new JwtProvider(secret, issuer);
     }
 
     @Test
@@ -34,7 +34,7 @@ class JwtUtilsTest {
         UUID userId = UUID.randomUUID();
         List<String> roles = List.of("ROLE_USER");
 
-        String token = jwtUtils.createAccessToken(username, userId, false, roles);
+        String token = jwtProvider.createAccessToken(username, userId, false, roles);
         DecodedJWT decoded = getVerifier().verify(token);
 
         assertThat(token).isNotNull();
@@ -47,7 +47,7 @@ class JwtUtilsTest {
     @Test
     @DisplayName("Should create Access Token even if roles list is empty")
     void createAccessToken_EmptyRoles_ShouldSucceed() {
-        String token = jwtUtils.createAccessToken("user", UUID.randomUUID(), false, List.of());
+        String token = jwtProvider.createAccessToken("user", UUID.randomUUID(), false, List.of());
         DecodedJWT decoded = getVerifier().verify(token);
 
         assertThat(decoded.getClaim("roles").asList(String.class)).isEmpty();
@@ -56,7 +56,7 @@ class JwtUtilsTest {
     @Test
     @DisplayName("Access Token should expire after exactly 10 minutes")
     void createAccessToken_Expiration_ShouldBeTenMinutes() {
-        String token = jwtUtils.createAccessToken("user", UUID.randomUUID(), false, List.of());
+        String token = jwtProvider.createAccessToken("user", UUID.randomUUID(), false, List.of());
         DecodedJWT decoded = getVerifier().verify(token);
 
         long expectedExp = System.currentTimeMillis() + (10 * 60 * 1000);
@@ -67,7 +67,7 @@ class JwtUtilsTest {
     @DisplayName("Refresh Token should be valid and have no roles")
     void createRefreshToken_HappyPath_ShouldSucceed() {
         String username = "hamza@gmail.com";
-        String token = jwtUtils.createRefreshToken(username);
+        String token = jwtProvider.createRefreshToken(username);
         DecodedJWT decoded = getVerifier().verify(token);
 
         assertThat(decoded.getSubject()).isEqualTo(username);
@@ -77,7 +77,7 @@ class JwtUtilsTest {
     @Test
     @DisplayName("Refresh Token should expire after 30 days")
     void createRefreshToken_Expiration_ShouldBeThirtyDays() {
-        String token = jwtUtils.createRefreshToken("user");
+        String token = jwtProvider.createRefreshToken("user");
         DecodedJWT decoded = getVerifier().verify(token);
 
         long expectedExp = System.currentTimeMillis() + (30L * 24 * 60 * 60 * 1000);
@@ -87,26 +87,26 @@ class JwtUtilsTest {
     @Test
     @DisplayName("Should throw exception if trying to use REFRESH token as ACCESS token")
     void decodedJWT_WrongTokenType_ShouldThrowException() {
-        String refreshToken = jwtUtils.createRefreshToken("hamza");
+        String refreshToken = jwtProvider.createRefreshToken("hamza");
 
-        assertThatThrownBy(() -> jwtUtils.decodedJWT(refreshToken, "ACCESS"))
+        assertThatThrownBy(() -> jwtProvider.decodedJWT(refreshToken, "ACCESS"))
                 .isInstanceOf(JWTVerificationException.class);
     }
 
     @Test
     @DisplayName("Should throw exception if token is tampered (Modified)")
     void decodedJWT_TamperedToken_ShouldThrowException() {
-        String validToken = jwtUtils.createAccessToken("user", UUID.randomUUID(), false,List.of());
+        String validToken = jwtProvider.createAccessToken("user", UUID.randomUUID(), false,List.of());
         String tamperedToken = validToken + "xyz";
 
-        assertThatThrownBy(() -> jwtUtils.decodedJWT(tamperedToken,"ACCESS"))
+        assertThatThrownBy(() -> jwtProvider.decodedJWT(tamperedToken,"ACCESS"))
                 .isInstanceOf(JWTVerificationException.class);
     }
 
     @Test
     @DisplayName("Should handle Null roles by creating a token with null claim")
     void createAccessToken_NullRoles_ShouldStillWork() {
-        String token = jwtUtils.createAccessToken("user", UUID.randomUUID(), false,null);
+        String token = jwtProvider.createAccessToken("user", UUID.randomUUID(), false,null);
         DecodedJWT decoded = getVerifier().verify(token);
 
         assertThat(decoded.getClaim("roles").isNull()).isTrue();
@@ -115,9 +115,9 @@ class JwtUtilsTest {
     @Test
     void getAuthenticate_ShouldReturnCorrectData() {
         UUID userId = UUID.randomUUID();
-        String token = jwtUtils.createAccessToken("hamza", userId, false, List.of("ROLE_USER"));
+        String token = jwtProvider.createAccessToken("hamza", userId, false, List.of("ROLE_USER"));
 
-        UsernamePasswordAuthenticationToken authenticate = jwtUtils.getAuthenticate(token);
+        UsernamePasswordAuthenticationToken authenticate = jwtProvider.getAuthenticate(token);
         CustomUserDetails principal = (CustomUserDetails) authenticate.getPrincipal();
 
         assertThat(authenticate.getName()).isEqualTo("hamza");
@@ -130,9 +130,9 @@ class JwtUtilsTest {
     @Test
     void getAuthenticate_ShouldReturnCorrectData_whenRolesIsNull() {
         UUID userId = UUID.randomUUID();
-        String token = jwtUtils.createAccessToken("hamza", userId, false, null);
+        String token = jwtProvider.createAccessToken("hamza", userId, false, null);
 
-        UsernamePasswordAuthenticationToken authenticate = jwtUtils.getAuthenticate(token);
+        UsernamePasswordAuthenticationToken authenticate = jwtProvider.getAuthenticate(token);
         CustomUserDetails principal = (CustomUserDetails) authenticate.getPrincipal();
 
         assertThat(authenticate.getName()).isEqualTo("hamza");
@@ -150,7 +150,7 @@ class JwtUtilsTest {
                 .withIssuer(issuer)
                 .sign(com.auth0.jwt.algorithms.Algorithm.HMAC256(secret));
 
-        assertThatThrownBy(() -> jwtUtils.getAuthenticate(tokenWithoutId))
+        assertThatThrownBy(() -> jwtProvider.getAuthenticate(tokenWithoutId))
                 .isInstanceOf(com.auth0.jwt.exceptions.JWTVerificationException.class)
                 .hasMessageContaining("Invalid Token");
     }

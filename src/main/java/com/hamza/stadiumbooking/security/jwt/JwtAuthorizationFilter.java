@@ -18,7 +18,7 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 @RequiredArgsConstructor
 public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
-    private final JwtUtils utils;
+    private final JwtProvider utils;
     private final HandlerExceptionResolver exceptionResolver;
 
     @Override
@@ -26,7 +26,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
         String authHeader = request.getHeader(AUTHORIZATION);
 
-        if (path.equals("/api/v1/login") || path.equals("/api/v1/auth/refresh-token") ||
+        if (path.equals("/api/v1/auth/login") || path.equals("/api/v1/auth/refresh-token") ||
                 authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
