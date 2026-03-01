@@ -2,7 +2,7 @@ package com.hamza.stadiumbooking.security.auth;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.hamza.stadiumbooking.exception.ResourceNotFoundException;
-import com.hamza.stadiumbooking.security.jwt.JwtUtils;
+import com.hamza.stadiumbooking.security.jwt.JwtProvider;
 import com.hamza.stadiumbooking.user.Role;
 import com.hamza.stadiumbooking.user.User;
 import com.hamza.stadiumbooking.user.UserRepository;
@@ -13,7 +13,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -30,7 +29,7 @@ import static org.mockito.BDDMockito.given;
 class AuthenticationServiceTest {
 
     @Mock
-    private JwtUtils jwtUtils;
+    private JwtProvider jwtProvider;
     @Mock
     private DecodedJWT decodedJWT;
     @Mock
@@ -55,10 +54,10 @@ class AuthenticationServiceTest {
     @Test
     @DisplayName("Should successfully refresh token and return new access token")
     void refreshToken_HappyPath_ShouldSucceed() {
-        given(jwtUtils.decodedJWT(refreshToken, "REFRESH")).willReturn(decodedJWT);
+        given(jwtProvider.decodedJWT(refreshToken, "REFRESH")).willReturn(decodedJWT);
         given(decodedJWT.getSubject()).willReturn(email);
         given(userRepository.findByEmailAndIsDeletedFalse(email)).willReturn(Optional.of(user));
-        given(jwtUtils.createAccessToken(email, user.getId(),false, List.of(Role.ROLE_PLAYER.name()))).willReturn("new_access_token");
+        given(jwtProvider.createAccessToken(email, user.getId(),false, List.of(Role.ROLE_PLAYER.name()))).willReturn("new_access_token");
 
         AuthenticationResponse response = authenticationService.refreshToken(refreshToken);
 
@@ -69,7 +68,7 @@ class AuthenticationServiceTest {
     @Test
     @DisplayName("Should throw ResourceNotFoundException when user in token does not exist")
     void refreshToken_UserNotFound_ShouldThrowException() {
-        given(jwtUtils.decodedJWT(refreshToken, "REFRESH")).willReturn(decodedJWT);
+        given(jwtProvider.decodedJWT(refreshToken, "REFRESH")).willReturn(decodedJWT);
         given(decodedJWT.getSubject()).willReturn(email);
         given(userRepository.findByEmailAndIsDeletedFalse(email)).willReturn(Optional.empty());
 

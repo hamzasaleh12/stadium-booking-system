@@ -1,9 +1,9 @@
 package com.hamza.stadiumbooking.security.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hamza.stadiumbooking.security.jwt.CustomAuthenticationFilter;
+import com.hamza.stadiumbooking.security.handler.DelegatedAccessDeniedHandler;
+import com.hamza.stadiumbooking.security.handler.DelegatedAuthenticationEntryPoint;
 import com.hamza.stadiumbooking.security.jwt.JwtAuthorizationFilter;
-import com.hamza.stadiumbooking.security.jwt.JwtUtils;
+import com.hamza.stadiumbooking.security.jwt.JwtProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,16 +32,19 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private final JwtUtils utils;
+    private final JwtProvider utils;
     private final HandlerExceptionResolver exceptionResolver;
-    private final ObjectMapper objectMapper;
+    private final DelegatedAuthenticationEntryPoint authEntryPoint;
+    private final DelegatedAccessDeniedHandler accessDeniedHandler;
 
-    public SecurityConfig(JwtUtils utils,
-                          ObjectMapper objectMapper,
-                          @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver) {
+    public SecurityConfig(JwtProvider utils,
+                          @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver
+            , DelegatedAuthenticationEntryPoint authEntryPoint, DelegatedAccessDeniedHandler accessDeniedHandler) {
+
         this.utils = utils;
-        this.objectMapper = objectMapper;
         this.exceptionResolver = exceptionResolver;
+        this.authEntryPoint = authEntryPoint;
+        this.accessDeniedHandler = accessDeniedHandler;
     }
 
     @Bean
@@ -65,13 +68,15 @@ public class SecurityConfig {
     }
 
     @Bean
-    protected SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
+    protected SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.cors(c -> c.configurationSource(corsConfigurationSource()));
         http.csrf(AbstractHttpConfigurer::disable);
-        http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));// السيرفر ستاتليس اهوه
+        http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        CustomAuthenticationFilter customAuthenticationFilter = new CustomAuthenticationFilter(authenticationManager, utils,exceptionResolver,objectMapper);
-        customAuthenticationFilter.setFilterProcessesUrl("/api/v1/login");
+        http.exceptionHandling(exception -> exception
+                .authenticationEntryPoint(authEntryPoint)
+                .accessDeniedHandler(accessDeniedHandler)
+        );
 
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(
@@ -79,7 +84,7 @@ public class SecurityConfig {
                         "/swagger-ui/**",
                         "/swagger-ui.html"
                 ).permitAll()
-                .requestMatchers("/api/v1/login/**", "/api/v1/auth/refresh-token/**").permitAll()
+                .requestMatchers("/api/v1/auth/login/**", "/api/v1/auth/refresh-token/**").permitAll()
                 .requestMatchers("/", "/actuator/health").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/stadiums/**").permitAll()
@@ -100,7 +105,6 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
         );
 
-        http.addFilter(customAuthenticationFilter);
         http.addFilterBefore(new JwtAuthorizationFilter(utils, exceptionResolver), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

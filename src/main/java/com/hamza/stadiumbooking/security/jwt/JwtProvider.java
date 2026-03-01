@@ -8,6 +8,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.hamza.stadiumbooking.security.service.CustomUserDetails;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
@@ -16,12 +17,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @Component @Slf4j
-public class JwtUtils {
+public class JwtProvider {
     private final String secretKey;
     private final String issuer;
 
-    public JwtUtils(@Value("${jwt.secret}") String secretKey,
-                    @Value("${jwt.issuer}") String issuer) {
+    public JwtProvider(@Value("${jwt.secret}") String secretKey,
+                       @Value("${jwt.issuer}") String issuer) {
         this.secretKey = secretKey;
         this.issuer = issuer;
     }
@@ -81,5 +82,15 @@ public class JwtUtils {
         CustomUserDetails userDetails = new CustomUserDetails(userId, email, "", isDeleted, authorities);
 
         return new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
+    }
+
+    public ResponseCookie createRefreshTokenCookie(String refreshToken) {
+        return ResponseCookie.from("refresh_token", refreshToken)
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(30L * 24 * 60 * 60)
+                .sameSite("Lax")
+                .build();
     }
 }
