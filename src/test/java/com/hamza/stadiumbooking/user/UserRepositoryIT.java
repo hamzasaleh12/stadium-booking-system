@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 
 @Transactional
-class UserRepositoryTest extends AbstractIntegrationTest {
+class UserRepositoryIT extends AbstractIntegrationTest {
     @Autowired
     private UserRepository userRepository;
     private User savedUser;

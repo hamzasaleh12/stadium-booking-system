@@ -24,6 +24,7 @@ import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.ZonedDateTime;
 import java.util.HashMap;
@@ -89,6 +90,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<Object> handleMissingParams(MissingServletRequestParameterException ex) {
         return error("Missing parameter: " + ex.getParameterName() + " is required.", HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Object> handleNoResourceFound(NoResourceFoundException e) {
+        return error("Resource not found: " + e.getResourcePath(), HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(MissingPathVariableException.class)

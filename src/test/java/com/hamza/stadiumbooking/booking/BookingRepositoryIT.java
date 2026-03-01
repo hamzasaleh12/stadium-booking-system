@@ -24,7 +24,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Transactional
-class BookingRepositoryTest extends AbstractIntegrationTest {
+class BookingRepositoryIT extends AbstractIntegrationTest {
     @Autowired
     private BookingRepository bookingRepository;
     @Autowired
