@@ -29,6 +29,7 @@
 
 ### Architecture Diagram
 
+
 ```mermaid
 graph TD
     Client[Client/Frontend] -- JWT in HttpOnly Cookie --> API[Spring Boot API]
