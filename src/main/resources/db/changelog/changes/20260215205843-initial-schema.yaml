@@ -212,3 +212,12 @@ databaseChangeLog:
         - addForeignKeyConstraint: { baseTableName: bookings, baseColumnNames: user_id, referencedTableName: users, referencedColumnNames: id, constraintName: fk_bookings_user }
         - addForeignKeyConstraint: { baseTableName: stadiums, baseColumnNames: owner_id, referencedTableName: users, referencedColumnNames: id, constraintName: fk_stadiums_owner }
         - addForeignKeyConstraint: { baseTableName: stadium_features, baseColumnNames: stadium_id, referencedTableName: stadiums, referencedColumnNames: id, constraintName: fk_stadium_features_stadium }
+
+  - changeSet:
+      id: 20260303-01-enlarge-phone-number
+      author: hamza
+      changes:
+        - modifyDataType:
+            tableName: users
+            columnName: phone_number
+            newDataType: VARCHAR(50)

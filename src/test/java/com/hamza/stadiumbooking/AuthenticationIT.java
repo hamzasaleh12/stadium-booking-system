@@ -63,7 +63,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         @Test
         @DisplayName("Should return tokens upon valid login")
         void login_ShouldReturnTokens() throws Exception {
-            authUtils.saveTestUser("login@gmail.com", "Password@123","01111111111");
+            authUtils.savePlayer("login@gmail.com", "Password@123","01111111111");
             LoginRequest loginRequest = new LoginRequest("login@gmail.com", "Password@123");
 
             // When & Then
@@ -80,7 +80,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         @DisplayName("Should authorize access to user details with valid JWT")
         void getUserById_ShouldReturnUserDetails_WhenAuthenticated() throws Exception {
             // Given
-            User user = authUtils.saveTestUser("auth@gmail.com", "Password@123","01111111111");
+            User user = authUtils.savePlayer("auth@gmail.com", "Password@123","01111111111");
             String token = authUtils.obtainAccessToken("auth@gmail.com", "Password@123");
 
             // When & Then
@@ -106,7 +106,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         @DisplayName("Should return 401 when password is incorrect")
         void login_ShouldReturn401_WhenPasswordIsWrong() throws Exception {
             // Given
-            authUtils.saveTestUser("test@gmail.com", "CorrectPassword@123","01111111111");
+            authUtils.savePlayer("test@gmail.com", "CorrectPassword@123","01111111111");
             LoginRequest loginRequest = new LoginRequest("test@gmail.com", "WrongPassword");
 
             // When & Then
@@ -126,7 +126,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         @Test
         @DisplayName("Should return 409 when a player tries to use an duplicate email")
         void register_ShouldReturn409_WhenEmailIsDuplicate() throws Exception {
-            authUtils.saveTestUser("duplicate@gmail.com", "Pass@123", "01111111111");
+            authUtils.savePlayer("duplicate@gmail.com", "Pass@123", "01111111111");
             UserRequest request = authUtils.createUserRequest("duplicate@gmail.com", "01234567890");
 
             mockMvc.perform(post(API_V1_USERS)
@@ -138,7 +138,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         @Test
         @DisplayName("Should return 409 when a player tries to use an duplicate phoneNumber")
         void register_ShouldReturn409_WhenPhoneNumberIsDuplicate() throws Exception {
-            authUtils.saveTestUser("email@gmail.com", "Pass@123", "01111111111");
+            authUtils.savePlayer("email@gmail.com", "Pass@123", "01111111111");
             UserRequest request = authUtils.createUserRequest("anotherEmail@gmail.com", "01111111111");
 
             mockMvc.perform(post(API_V1_USERS)
@@ -169,7 +169,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         @Test
         @DisplayName("Should return 401 upon Malformed Access token")
         void getUserById_ShouldReturn401_WhenAccessTokenIsMalformed() throws Exception {
-            User user = authUtils.saveTestUser("login@gmail.com", "Password@123", "01111111111");
+            User user = authUtils.savePlayer("login@gmail.com", "Password@123", "01111111111");
             String accessToken = authUtils.obtainAccessToken("login@gmail.com", "Password@123");
             String fakeToken = accessToken + " Fake";
 
@@ -181,7 +181,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         @Test
         @DisplayName("Should return 401 upon Malformed Refresh token")
         void refreshToken_ShouldReturn401_WhenCookieIsMalformed() throws Exception {
-            authUtils.saveTestUser("refresh@gmail.com", "Password@123", "01111111111");
+            authUtils.savePlayer("refresh@gmail.com", "Password@123", "01111111111");
             jakarta.servlet.http.Cookie validRefreshToken =
                     authUtils.obtainRefreshToken("refresh@gmail.com", "Password@123");
 
@@ -196,7 +196,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         @Test
         @DisplayName("Should return 200 when user wants to renew Access token with Refresh token")
         void refreshToken_ShouldReturnNewAccessToken() throws Exception {
-            authUtils.saveTestUser("refresh@gmail.com", "Password@123", "01111111111");
+            authUtils.savePlayer("refresh@gmail.com", "Password@123", "01111111111");
             jakarta.servlet.http.Cookie validRefreshToken =
                     authUtils.obtainRefreshToken("refresh@gmail.com", "Password@123");
 
@@ -209,7 +209,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         @Test
         @DisplayName("Should return 400 when user dose not have refresh token in cookie")
         void refreshToken_ShouldThrowException_whenThereIsNoRefreshTokenInCookie() throws Exception {
-            authUtils.saveTestUser("refresh@gmail.com", "Password@123", "01111111111");
+            authUtils.savePlayer("refresh@gmail.com", "Password@123", "01111111111");
             mockMvc.perform(post(API_V1_REFRESH_TOKEN)
                     ).andExpect(status().isBadRequest());
         }
@@ -231,26 +231,5 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                             .header("Authorization", "Bearer " + tokenWithoutId)
                     ).andExpect(status().isUnauthorized())
                     .andExpect(jsonPath("$.msg").value("Authentication failed: Invalid Token"));
-        }
-
-        // ==========================================================================================
-        // TODO: [REFRACTORING] - Move the following test to 'UserAuthorizationIT'
-        // This test belongs to Authorization logic (Permissions) rather than Authentication.
-        // Task: Ensure that player ownership/privacy is respected across different user profiles.
-        // ==========================================================================================
-
-        @Test
-        @DisplayName("Should return 403 when a player tries to access another player's profile")
-        void getUserById_ShouldReturn403_WhenAccessingDifferentPlayerProfile() throws Exception {
-            User player1 = authUtils.saveTestUser("player1@gmail.com", "Pass@123","01111111111");
-            User player2 = authUtils.saveTestUser("player2@gmail.com", "Pass@123","01234567890");
-
-            String token1 = authUtils.obtainAccessToken(player1.getEmail(), "Pass@123");
-
-            mockMvc.perform(get(API_V1_USERS + "/{userId}", player2.getId())
-                            .header("Authorization", "Bearer " + token1)
-                    ).andExpect(status().isForbidden())
-                    .andExpect(jsonPath("$.httpStatus").value("FORBIDDEN"))
-                    .andExpect(jsonPath("$.zonedDateTime").exists());
         }
     }
