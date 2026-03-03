@@ -31,17 +31,21 @@ public class AuthTestUtils {
 
     private static final String API_V1_LOGIN = "/api/v1/auth/login";
 
-    public User saveTestUser(String email, String rawPassword, String phoneNumber) {
+    public User saveUser(String email, String rawPassword, String phoneNumber, Role role) {
         User user = User.builder()
                 .name("Test User")
                 .email(email)
                 .password(passwordEncoder.encode(rawPassword))
                 .phoneNumber(phoneNumber)
                 .dob(LocalDate.of(1995, 1, 1))
-                .role(Role.ROLE_PLAYER)
+                .role(role)
                 .isDeleted(false)
                 .build();
         return userRepository.save(user);
+    }
+
+    public User savePlayer(String email, String rawPassword, String phoneNumber) {
+        return saveUser(email, rawPassword, phoneNumber, Role.ROLE_PLAYER);
     }
 
     public UserRequest createUserRequest(String email, String phoneNumber) {
