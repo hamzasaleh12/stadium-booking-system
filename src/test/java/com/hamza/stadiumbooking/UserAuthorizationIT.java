@@ -4,7 +4,6 @@ import com.hamza.stadiumbooking.base.AbstractIntegrationTest;
 import com.hamza.stadiumbooking.base.AuthTestUtils;
 import com.hamza.stadiumbooking.user.Role;
 import com.hamza.stadiumbooking.user.User;
-import com.hamza.stadiumbooking.user.UserRepository;
 import com.hamza.stadiumbooking.user.UserUpdateRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,9 +22,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class UserAuthorizationIT extends AbstractIntegrationTest {
 
     @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
     private AuthTestUtils authUtils;
 
     private static final String API_V1_USERS = "/api/v1/users";
@@ -37,8 +33,6 @@ class UserAuthorizationIT extends AbstractIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        userRepository.deleteAll();
-
         // Setup Personas
         User admin = authUtils.saveUser("admin@gmail.com", "Admin@123", "01555555555", Role.ROLE_ADMIN);
         player1 = authUtils.saveUser("player1@gmail.com", "Pass@123", "01111111112", Role.ROLE_PLAYER);

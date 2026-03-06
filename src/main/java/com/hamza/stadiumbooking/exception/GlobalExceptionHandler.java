@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -169,9 +170,30 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Object> handleGlobalException(Exception e) {
-        log.error("Unhandled error: ", e);
-        return error("An unexpected error occurred. Please try again later or contact support.", HttpStatus.INTERNAL_SERVER_ERROR);
+    public ResponseEntity<Object> handleGlobalException(Exception e, WebRequest request) {
+        Throwable rootCause = e;
+        while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
+            rootCause = rootCause.getCause();
+        }
+
+        log.error("""
+        ❌ [UNHANDLED ERROR REPORT]
+        ---------------------------------------------------------
+        Path: {}
+        Exception Type: {}
+        Culprit (Root Cause): {}
+        Error Message: {}
+        ---------------------------------------------------------
+        """,
+                request.getDescription(false),
+                e.getClass().getSimpleName(),
+                rootCause.getClass().getName(),
+                rootCause.getMessage(),
+                e
+        );
+
+        return error("An unexpected error occurred. Please try again later or contact support.",
+                HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     private ResponseEntity<Object> error(String msg, HttpStatus status){

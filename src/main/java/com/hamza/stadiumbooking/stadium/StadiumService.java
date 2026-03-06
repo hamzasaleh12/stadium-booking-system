@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,7 @@ public class StadiumService {
         return stadiumRepository.findAllDistinctLocations();
     }
 
+    @Cacheable(value = "stadiums", key = "#id")
     public StadiumResponse getStadiumById(UUID id) {
         Stadium stadium = stadiumRepository.findByIdAndIsDeletedFalse(id).orElseThrow(
                 () -> {
@@ -54,7 +56,7 @@ public class StadiumService {
     }
 
     @Transactional
-    @CacheEvict(value = {"locations"}, allEntries = true)
+    @CacheEvict(value = "locations", allEntries = true)
     public StadiumResponse addStadium(StadiumRequest request) {
         log.info("Action: addStadium | Attempting to add new stadium: {}", request.name());
 
@@ -78,13 +80,16 @@ public class StadiumService {
     }
 
     @Transactional
-    @CacheEvict(value = {"locations"}, allEntries = true)
-    public void deleteStadium(UUID stadiumId) {
-        log.info("Action: deleteStadium | Attempting to soft-delete stadium ID: {}", stadiumId);
-        Stadium stadium = stadiumRepository.findByIdAndIsDeletedFalse(stadiumId).orElseThrow(
+    @Caching(evict = {
+            @CacheEvict(value = "locations", allEntries = true),
+            @CacheEvict(value = "stadiums", key = "#id")
+    })
+    public void deleteStadium(UUID id) {
+        log.info("Action: deleteStadium | Attempting to soft-delete stadium ID: {}", id);
+        Stadium stadium = stadiumRepository.findByIdAndIsDeletedFalse(id).orElseThrow(
                 () -> {
-                    log.error("Action: deleteStadium | Error: Stadium {} not found", stadiumId);
-                    return new ResourceNotFoundException("Stadium not found with ID: " + stadiumId);
+                    log.error("Action: deleteStadium | Error: Stadium {} not found", id);
+                    return new ResourceNotFoundException("Stadium not found with ID: " + id);
                 });
 
         stadium.setDeleted(true);
@@ -93,7 +98,10 @@ public class StadiumService {
     }
 
     @Transactional
-    @CacheEvict(value = {"locations"}, allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "locations", allEntries = true),
+            @CacheEvict(value = "stadiums", key = "#id")
+    })
     public StadiumResponse updateStadium(UUID id, StadiumRequestForUpdate request) {
         log.info("Action: updateStadium | Attempting to update stadium ID: {}", id);
         Stadium stadium = stadiumRepository.findByIdAndIsDeletedFalse(id).orElseThrow(
@@ -128,7 +136,7 @@ public class StadiumService {
                 stadium.getBallRentalFee(),
                 stadium.getOpenTime(),
                 stadium.getCloseTime(),
-                stadium.getFeatures(),
+                new java.util.HashSet<>(stadium.getFeatures()),
                 stadium.getType(),
                 stadium.getPhotoUrl(),
                 stadium.getOwner().getId()

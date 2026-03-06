@@ -3,6 +3,7 @@ package com.hamza.stadiumbooking;
 import com.hamza.stadiumbooking.base.AbstractIntegrationTest;
 import com.hamza.stadiumbooking.base.AuthTestUtils;
 import com.hamza.stadiumbooking.security.auth.LoginRequest;
+import com.hamza.stadiumbooking.stadium.StadiumRepository;
 import com.hamza.stadiumbooking.user.Role;
 import com.hamza.stadiumbooking.user.User;
 import com.hamza.stadiumbooking.user.UserRepository;
@@ -27,9 +28,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     class AuthenticationIT extends AbstractIntegrationTest {
 
         @Autowired
-        private UserRepository userRepository;
-
-        @Autowired
         private AuthTestUtils authUtils;
 
         @Autowired
@@ -38,11 +36,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         private static final String API_V1_USERS = "/api/v1/users";
         private static final String API_V1_LOGIN = "/api/v1/auth/login";
         private static final String API_V1_REFRESH_TOKEN = "/api/v1/auth/refresh-token";
-
-        @BeforeEach
-        void cleanUp() {
-            userRepository.deleteAll();
-        }
 
         @Test
         @DisplayName("Should register a new user successfully")
