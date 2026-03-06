@@ -2,6 +2,8 @@ package com.hamza.stadiumbooking.base;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hamza.stadiumbooking.security.auth.LoginRequest;
+import com.hamza.stadiumbooking.stadium.StadiumRequest;
+import com.hamza.stadiumbooking.stadium.Type;
 import com.hamza.stadiumbooking.user.Role;
 import com.hamza.stadiumbooking.user.User;
 import com.hamza.stadiumbooking.user.UserRepository;
@@ -16,7 +18,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Objects;
+import java.util.Set;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
@@ -68,5 +72,13 @@ public class AuthTestUtils {
                 .content(objectMapper.writeValueAsString(loginRequest))
         ).andReturn();
         return Objects.requireNonNull(result.getResponse().getCookie("refresh_token"));
+    }
+
+    public StadiumRequest createStadiumRequest(String name) {
+        return new StadiumRequest(
+                name, "Cairo, Egypt", 250.0, 50,
+                LocalTime.of(18, 0), LocalTime.of(23, 0),
+                Set.of("WiFi", "Locker Room"), Type.SEVEN_A_SIDE, "https://photo.com"
+        );
     }
 }

@@ -1,35 +1,66 @@
 package com.hamza.stadiumbooking.security.config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.cache.interceptor.CacheErrorHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
+
+import java.time.Duration;
 
 @Slf4j
 @Configuration
 @EnableCaching
+@RequiredArgsConstructor
 public class CacheConfig {
 
+    private final ObjectMapper springManagedObjectMapper;
+
     @Bean
-    @ConditionalOnMissingBean
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        try {
-            return RedisCacheManager.builder(connectionFactory).build();
-        } catch (Exception ex) {
-            log.error("Redis unavailable, falling back to in-memory cache. Cause: {}", ex.getMessage());
-            return new ConcurrentMapCacheManager();
-        }
+        return RedisCacheManager.builder(connectionFactory)
+                .cacheDefaults(redisCacheConfiguration())
+                .transactionAware()
+                .build();
     }
 
     @Bean
-    @ConditionalOnMissingBean
+    public RedisCacheConfiguration redisCacheConfiguration() {
+        ObjectMapper objectMapper = springManagedObjectMapper.copy();
+        objectMapper.registerModule(new JavaTimeModule());
+
+        @SuppressWarnings("deprecation")
+        ObjectMapper.DefaultTyping typing = ObjectMapper.DefaultTyping.EVERYTHING;
+
+        objectMapper.activateDefaultTyping(
+                LaissezFaireSubTypeValidator.instance,
+                typing,
+                JsonTypeInfo.As.PROPERTY
+        );
+
+        return RedisCacheConfiguration.defaultCacheConfig()
+                .entryTtl(Duration.ofMinutes(60))
+                .disableCachingNullValues()
+                .serializeValuesWith(
+                        RedisSerializationContext.SerializationPair.fromSerializer(
+                                new GenericJackson2JsonRedisSerializer(objectMapper)
+                        )
+                );
+    }
+
+    @Bean
     public CacheErrorHandler cacheErrorHandler() {
         return new CacheErrorHandler() {
             @Override
