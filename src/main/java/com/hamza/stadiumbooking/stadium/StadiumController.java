@@ -48,7 +48,7 @@ public class StadiumController {
         return ResponseEntity.ok(stadiumService.getAllLocations());
     }
 
-    @PostMapping("/add")
+    @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<StadiumResponse> addStadium(@RequestBody @Valid StadiumRequest request){
         log.info("Incoming request to create stadium '{}' by Manager ID: {}",

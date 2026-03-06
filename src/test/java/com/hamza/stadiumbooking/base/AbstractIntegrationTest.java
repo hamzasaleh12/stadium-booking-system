@@ -1,6 +1,7 @@
 package com.hamza.stadiumbooking.base;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,6 +22,9 @@ public abstract class AbstractIntegrationTest {
     @Autowired
     protected ObjectMapper objectMapper;
 
+    @Autowired
+    private org.springframework.data.redis.connection.RedisConnectionFactory connectionFactory;
+
     @ServiceConnection
     static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.3")
             .withDatabaseName("testdb");
@@ -32,5 +36,10 @@ public abstract class AbstractIntegrationTest {
     static {
         mysql.start();
         redis.start();
+    }
+
+    @BeforeEach
+    void clearRedis() {
+        connectionFactory.getConnection().serverCommands().flushAll();
     }
 }
