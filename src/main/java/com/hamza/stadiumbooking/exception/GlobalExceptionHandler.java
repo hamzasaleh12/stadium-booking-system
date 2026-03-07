@@ -67,7 +67,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({JWTVerificationException.class, TokenExpiredException.class})
     public ResponseEntity<Object> handleJwtErrors(Exception e) {
-        log.warn("JWT auth failed", e);
+        log.warn("JWT auth failed {}", e.getMessage());
         return error("Authentication failed: " + e.getMessage(), HttpStatus.UNAUTHORIZED);
     }
 
@@ -78,13 +78,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<Object> handleAuth(AuthenticationException e) {
-        log.warn("Authentication failed", e);
+        log.warn("Authentication failed {}", e.getMessage());
         return error("Authentication failed: " + e.getMessage(), HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Object> handleAccessDeniedException(AccessDeniedException e) {
-        log.warn("Access denied", e);
+        log.warn("Access denied {}", e.getMessage());
         return error("Access Denied: You don't have permission to perform this action.", HttpStatus.FORBIDDEN);
     }
 
@@ -127,7 +127,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Object> handleBadJson(HttpMessageNotReadableException e) {
-        log.warn("Bad JSON request", e);
+        log.warn("Bad JSON request {}", e.getMessage());
         return error("Malformed JSON request: " + e.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
@@ -149,7 +149,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Object> handleDataIntegrity(DataIntegrityViolationException e) {
-        log.warn("Data integrity violation", e);
+        log.warn("Data integrity violation {}", e.getMessage());
         return error("Data integrity violation", HttpStatus.CONFLICT);
     }
 
