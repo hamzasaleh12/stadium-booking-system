@@ -99,4 +99,11 @@ public class Booking {
         if (startTime == null) return true;
         return LocalDateTime.now().plusHours(6).isAfter(this.startTime);
     }
+
+    @PrePersist
+    @PreUpdate
+    public void prepareBooking() {
+        validateDuration();
+        calculateTotalPrice();
+    }
 }

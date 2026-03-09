@@ -1,6 +1,7 @@
 package com.hamza.stadiumbooking.base;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hamza.stadiumbooking.booking.BookingRepository;
 import com.hamza.stadiumbooking.stadium.StadiumRepository;
 import com.hamza.stadiumbooking.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +34,9 @@ public abstract class AbstractIntegrationTest {
     @Autowired
     protected UserRepository userRepository;
 
+    @Autowired
+    protected BookingRepository bookingRepository;
+
     @ServiceConnection
     static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.3")
             .withDatabaseName("testdb");
@@ -47,7 +51,8 @@ public abstract class AbstractIntegrationTest {
     }
 
     @BeforeEach
-    void clearRedis() {
+    void cleanup() {
+        bookingRepository.deleteAll();
         stadiumRepository.deleteAll();
         userRepository.deleteAll();
         connectionFactory.getConnection().serverCommands().flushAll();

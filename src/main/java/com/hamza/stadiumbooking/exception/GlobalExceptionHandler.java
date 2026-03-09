@@ -5,8 +5,10 @@ import com.auth0.jwt.exceptions.TokenExpiredException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -141,9 +143,13 @@ public class GlobalExceptionHandler {
         return error("Not acceptable: " + e.getMessage(), HttpStatus.NOT_ACCEPTABLE);
     }
 
-    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
-    public ResponseEntity<Object> handleConcurrencyFailure(ObjectOptimisticLockingFailureException e) {
-        log.warn("Concurrency conflict detected: {}", e.getMessage());
+    @ExceptionHandler({
+            CannotAcquireLockException.class,
+            PessimisticLockingFailureException.class,
+            ObjectOptimisticLockingFailureException.class
+    })
+    public ResponseEntity<Object> handleConcurrencyConflicts(Exception e) {
+        log.warn("Concurrency conflict or lock failure: {}", e.getMessage());
         return error("The record was updated by another user. Please refresh and try again.", HttpStatus.CONFLICT);
     }
 

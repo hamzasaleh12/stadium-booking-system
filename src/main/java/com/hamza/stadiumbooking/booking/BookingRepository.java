@@ -2,6 +2,7 @@ package com.hamza.stadiumbooking.booking;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -10,17 +11,21 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID; // MODIFIED: Import UUID
+import java.util.UUID;
 
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, UUID> {
 
+    @EntityGraph(attributePaths = {"stadium", "user"})
     Page<Booking> findByUserId(Pageable pageable, UUID userId);
 
+    @EntityGraph(attributePaths = {"stadium", "user"})
     Page<Booking> findByStadiumId(Pageable pageable, UUID stadiumId);
 
+    @EntityGraph(attributePaths = {"stadium", "user"})
     Page<Booking> findByUserIdAndStadiumId(Pageable pageable, UUID userId, UUID stadiumId);
 
+    @EntityGraph(attributePaths = {"stadium", "user"})
     Page<Booking> findAllByUserId(Pageable pageable, UUID userId);
 
     @Query("""

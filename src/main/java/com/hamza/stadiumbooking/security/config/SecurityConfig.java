@@ -93,14 +93,15 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT,  "/api/v1/stadiums/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
                 .requestMatchers(HttpMethod.DELETE,"/api/v1/stadiums/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
 
-                .requestMatchers(HttpMethod.POST, "/api/v1/bookings", "/api/v1/bookings/**")
-                .hasAnyAuthority("ROLE_ADMIN", "ROLE_PLAYER")
+                .requestMatchers(HttpMethod.POST, "/api/v1/bookings/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_PLAYER")
 
-                .requestMatchers(HttpMethod.GET, "/api/v1/bookings/my-bookings")
-                .hasAnyAuthority("ROLE_ADMIN", "ROLE_PLAYER")
+                .requestMatchers(HttpMethod.GET, "/api/v1/bookings/{id}").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER", "ROLE_PLAYER")
+                .requestMatchers(HttpMethod.GET, "/api/v1/bookings/my-bookings").hasAnyAuthority("ROLE_ADMIN", "ROLE_PLAYER")
+                .requestMatchers(HttpMethod.GET, "/api/v1/bookings/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
 
-                .requestMatchers(HttpMethod.GET, "/api/v1/bookings/**")
-                .hasAnyAuthority("ROLE_MANAGER", "ROLE_ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/bookings/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_PLAYER")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/bookings/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_PLAYER")
+
 
                 .anyRequest().authenticated()
         );
