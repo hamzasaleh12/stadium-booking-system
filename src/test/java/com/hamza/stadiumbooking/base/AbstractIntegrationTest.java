@@ -56,5 +56,6 @@ public abstract class AbstractIntegrationTest {
         stadiumRepository.deleteAll();
         userRepository.deleteAll();
         connectionFactory.getConnection().serverCommands().flushAll();
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
     }
 }
