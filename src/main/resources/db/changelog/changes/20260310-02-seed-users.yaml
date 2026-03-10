@@ -1,0 +1,75 @@
+databaseChangeLog:
+  # 1. Super Admin Seeder
+  - changeSet:
+      id: 20260310-02-seed-admin
+      author: hamza
+      context: "local, prod"
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: "SELECT COUNT(*) FROM users WHERE email = 'admin@gmail.com'"
+      changes:
+        - insert:
+            tableName: users
+            columns:
+              - column: { name: id, valueComputed: "UUID_TO_BIN(UUID())" }
+              - column: { name: version, valueNumeric: 0 }
+              - column: { name: name, value: "Super Admin" }
+              - column: { name: email, value: "admin@gmail.com" }
+              - column: { name: phone_number, value: "01012345678" }
+              - column: { name: password, value: "$2a$10$hoVkdEC12AnxJtGB9CN/Y.ucvJvlN5YwT6JvxMOmgQWhYY8YRA/GC" }
+              - column: { name: dob, valueDate: "1995-01-01" }
+              - column: { name: role, value: "ROLE_ADMIN" }
+              - column: { name: is_deleted, valueBoolean: false }
+              - column: { name: created_at, valueComputed: "CURRENT_TIMESTAMP" }
+
+  # 2. Manager User Seeder
+  - changeSet:
+      id: 20260310-03-seed-manager
+      author: hamza
+      context: "local, prod"
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: "SELECT COUNT(*) FROM users WHERE email = 'manager@gmail.com'"
+      changes:
+        - insert:
+            tableName: users
+            columns:
+              - column: { name: id, valueComputed: "UUID_TO_BIN(UUID())" }
+              - column: { name: version, valueNumeric: 0 }
+              - column: { name: name, value: "Manager User" }
+              - column: { name: email, value: "manager@gmail.com" }
+              - column: { name: phone_number, value: "01022345678" }
+              - column: { name: password, value: "$2a$10$FNGOn8yO18AGqB4jXO/WXOFvz4bnueKSYncPu5.K.xK.FpO5Nb/VC" }
+              - column: { name: dob, valueDate: "1995-01-01" }
+              - column: { name: role, value: "ROLE_MANAGER" }
+              - column: { name: is_deleted, valueBoolean: false }
+              - column: { name: created_at, valueComputed: "CURRENT_TIMESTAMP" }
+
+  # 3. Player User Seeder
+  - changeSet:
+      id: 20260310-04-seed-player
+      author: hamza
+      context: "local, prod"
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: "SELECT COUNT(*) FROM users WHERE email = 'player@gmail.com'"
+      changes:
+        - insert:
+            tableName: users
+            columns:
+              - column: { name: id, valueComputed: "UUID_TO_BIN(UUID())" }
+              - column: { name: version, valueNumeric: 0 }
+              - column: { name: name, value: "Player User" }
+              - column: { name: email, value: "player@gmail.com" }
+              - column: { name: phone_number, value: "01032345678" }
+              - column: { name: password, value: "$2a$10$7jowtJ4lBiDDqDqvdWe68.5Cxxf50CknPr3ZHbILYscM9DKW4/0Ea" }
+              - column: { name: dob, valueDate: "1995-01-01" }
+              - column: { name: role, value: "ROLE_PLAYER" }
+              - column: { name: is_deleted, valueBoolean: false }
+              - column: { name: created_at, valueComputed: "CURRENT_TIMESTAMP" }

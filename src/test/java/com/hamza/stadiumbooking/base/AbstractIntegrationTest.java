@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hamza.stadiumbooking.booking.BookingRepository;
 import com.hamza.stadiumbooking.stadium.StadiumRepository;
 import com.hamza.stadiumbooking.user.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -29,6 +29,9 @@ public abstract class AbstractIntegrationTest {
     private org.springframework.data.redis.connection.RedisConnectionFactory connectionFactory;
 
     @Autowired
+    protected org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    @Autowired
     protected StadiumRepository stadiumRepository;
 
     @Autowired
@@ -50,11 +53,16 @@ public abstract class AbstractIntegrationTest {
         redis.start();
     }
 
-    @BeforeEach
-    void cleanup() {
-        bookingRepository.deleteAll();
-        stadiumRepository.deleteAll();
-        userRepository.deleteAll();
+    @AfterEach
+    void tearDown() {
+        jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS = 0;");
+
+        jdbcTemplate.execute("TRUNCATE TABLE bookings;");
+        jdbcTemplate.execute("TRUNCATE TABLE stadiums;");
+        jdbcTemplate.execute("TRUNCATE TABLE users;");
+
+        jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS = 1;");
+
         connectionFactory.getConnection().serverCommands().flushAll();
         org.springframework.security.core.context.SecurityContextHolder.clearContext();
     }

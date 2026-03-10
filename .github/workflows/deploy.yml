@@ -22,10 +22,10 @@ jobs:
           cache: 'maven'
 
       - name: Run Unit Tests
-        run: mvn test -Dtest="!*IT"
+        run: ./mvnw test
 
       - name: Run Integration Tests
-        run: mvn test -Dtest="*IT"
+        run: ./mvnw failsafe:integration-test failsafe:verify
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
