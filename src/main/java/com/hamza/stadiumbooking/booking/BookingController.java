@@ -23,19 +23,19 @@ public class BookingController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public Page<BookingResponse> getAdminGlobalBookings(@ParameterObject
+    public ResponseEntity<Page<BookingResponse>> getAdminGlobalBookings(@ParameterObject
                                                         @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable){
         log.info("Incoming request to get ALL global bookings (Admin View)");
-        return bookingService.getAllBookings(pageable, null, null);
+        return ResponseEntity.ok(bookingService.getAllBookings(pageable, null, null));
     }
 
     @GetMapping("/stadiums/{stadiumId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public Page<BookingResponse> getAllBookings(@ParameterObject
+    public ResponseEntity<Page<BookingResponse>> getAllBookings(@ParameterObject
                                                 @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable,
                                                 @PathVariable UUID stadiumId){
         log.info("Incoming request to get bookings for Stadium ID: {}", stadiumId);
-        return bookingService.getAllBookings(pageable, stadiumId, null);
+        return ResponseEntity.ok(bookingService.getAllBookings(pageable, stadiumId, null));
     }
 
     @GetMapping("/players/{playerId}")
@@ -87,6 +87,7 @@ public class BookingController {
     public ResponseEntity<Void> deleteBooking(@PathVariable UUID bookingId){
         log.info("Incoming request to delete booking with ID: {}", bookingId);
         bookingService.deleteBooking(bookingId);
+        log.info("Action: deleteBooking | Success | Booking Cancelled ID: {}", bookingId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
@@ -97,6 +98,7 @@ public class BookingController {
     ) {
         log.info("Incoming request to update booking with ID: {}", bookingId);
         BookingResponse bookingResponse = bookingService.updateBooking(bookingId, bookingRequestForUpdate);
+        log.info("Action: updateBooking | Success | Booking Updated ID: {}", bookingId);
         return new ResponseEntity<>(bookingResponse, HttpStatus.OK);
     }
 }

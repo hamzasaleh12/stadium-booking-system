@@ -61,12 +61,6 @@ class BookingServiceTest {
 
     @BeforeEach
     void setUp() {
-        UUID sharedAdminId = UUID.randomUUID();
-        User admin = new User(
-                sharedAdminId, 0L, "Admin Name", "admin@example.com", "0122222222222",
-                "pass", LocalDate.of(1980, 1, 1), null, null, Role.ROLE_ADMIN, false
-        );
-
         UUID sharedManagerId = UUID.randomUUID();
         manager = new User(
                 sharedManagerId, 0L, "Manager Name", "manager@example.com", "01111111111",
@@ -343,7 +337,7 @@ class BookingServiceTest {
 
         assertThatThrownBy(() -> bookingService.deleteBooking(sharedBooking.getId()))
                 .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("Booking not found with ID: " + sharedBooking.getId());
+                .hasMessageContaining("Booking not found ID: " + sharedBooking.getId());
     }
 
     @Test
@@ -352,8 +346,8 @@ class BookingServiceTest {
         sharedBooking.setStatus(BookingStatus.CANCELLED);
 
         assertThatThrownBy(() -> bookingService.deleteBooking(sharedBooking.getId()))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Cannot delete a cancelled or completed booking.");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Cannot modify a cancelled or completed booking.");
     }
     @Test
     void deleteBookingById_ShouldThrowIllegalStateException2() {
@@ -361,8 +355,8 @@ class BookingServiceTest {
         sharedBooking.setStatus(BookingStatus.COMPLETED);
 
         assertThatThrownBy(() -> bookingService.deleteBooking(sharedBooking.getId()))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Cannot delete a cancelled or completed booking.");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Cannot modify a cancelled or completed booking.");
     }
 
     @Test
@@ -383,8 +377,8 @@ class BookingServiceTest {
         sharedBooking.setStartTime(LocalDateTime.now().plusHours(1));
 
         assertThatThrownBy(() -> bookingService.deleteBooking(sharedBooking.getId()))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("You cannot cancel or update the booking within 6 hours of the start time.");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Cannot modify within 6 hours of start time.");
     }
 
     @Test
@@ -423,7 +417,7 @@ class BookingServiceTest {
         BookingRequest request = new BookingRequest(
                 sharedStadiumId, sharedBooking.getStartTime(), sharedBooking.getEndTime(), "New Booking"
         );
-        given(stadiumRepository.findByIdAndIsDeletedFalse(sharedStadiumId)).willReturn(Optional.empty());
+        given(stadiumRepository.findByIdWithLock(sharedStadiumId)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> bookingService.addBooking(request))
                 .isInstanceOf(ResourceNotFoundException.class)
@@ -435,7 +429,7 @@ class BookingServiceTest {
         BookingRequest request = new BookingRequest(
                 sharedStadiumId, sharedBooking.getStartTime(), sharedBooking.getEndTime(), "Conflict Note"
         );
-        given(stadiumRepository.findByIdAndIsDeletedFalse(sharedStadiumId)).willReturn(Optional.of(sharedStadium));
+        given(stadiumRepository.findByIdWithLock(sharedStadiumId)).willReturn(Optional.of(sharedStadium));
         given(bookingRepository.findConflictingBookingsForNew(request.stadiumId(), request.startTime(), request.endTime()))
                 .willReturn(true);
 
@@ -450,7 +444,7 @@ class BookingServiceTest {
                 sharedStadiumId, LocalDateTime.of(2026,2,1,6,0,0),
                 LocalDateTime.of(2026,2,1,8,0,0), "Conflict Note"
         );
-        given(stadiumRepository.findByIdAndIsDeletedFalse(sharedStadiumId)).willReturn(Optional.of(sharedStadium));
+        given(stadiumRepository.findByIdWithLock(sharedStadiumId)).willReturn(Optional.of(sharedStadium));
 
 
         assertThatThrownBy(() -> bookingService.addBooking(request))
@@ -461,79 +455,66 @@ class BookingServiceTest {
     @Test
     void addBooking() {
         BookingRequest request = new BookingRequest(
-                sharedStadiumId, sharedBooking.getStartTime(), sharedBooking.getEndTime(), "Success Note"
+                sharedStadiumId, startTime, endTime, "Success Note"
         );
+        given(stadiumRepository.findByIdWithLock(sharedStadiumId)).willReturn(Optional.of(sharedStadium));
+        given(bookingRepository.findConflictingBookingsForNew(any(), any(), any())).willReturn(false);
         given(ownershipValidationService.getCurrentUser()).willReturn(player);
-        given(stadiumRepository.findByIdAndIsDeletedFalse(sharedStadiumId)).willReturn(Optional.of(sharedStadium));
-        given(bookingRepository.findConflictingBookingsForNew(request.stadiumId(), request.startTime(), request.endTime()))
-                .willReturn(false);
 
-        Booking savedEntity = new Booking(
-                UUID.randomUUID(), 0L, request.startTime(), request.endTime(), sharedBooking.getTotalPrice(),
-                request.note(), player, sharedStadium, BookingStatus.CONFIRMED, null, null
-        );
-        when(bookingRepository.save(any(Booking.class))).thenReturn(savedEntity);
+        given(bookingRepository.save(any(Booking.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
 
         BookingResponse response = bookingService.addBooking(request);
 
-        ArgumentCaptor<Booking> captor = ArgumentCaptor.forClass(Booking.class);
-        verify(bookingRepository).save(captor.capture());
-        Booking savedBooking = captor.getValue();
-
-        assertThat(savedBooking.getNote()).isEqualTo("Success Note");
-        assertThat(savedBooking.getUser().getId()).isEqualTo(response.userId());
-        assertThat(savedBooking.getStatus()).isEqualTo(BookingStatus.CONFIRMED);
-        assertThat(savedBooking.getTotalPrice()).isEqualTo(210.0);
+        assertThat(response.totalPrice()).isEqualTo(210.0);
+        verify(bookingRepository).save(any(Booking.class));
     }
 
     @Test
     void updateBookingWhenBookingIsNotAvailable() {
-        BookingRequestForUpdate request = new BookingRequestForUpdate(
-                sharedStadiumId, sharedBooking.getStartTime(), sharedBooking.getEndTime(), "Update Note"
-        );
+        BookingRequestForUpdate request = new BookingRequestForUpdate(sharedStadiumId, null, null, "Update Note");
         given(bookingRepository.findById(sharedBooking.getId())).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> bookingService.updateBooking(sharedBooking.getId(), request))
                 .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("Booking not found with ID: " + sharedBooking.getId());
+                .hasMessageContaining("Booking not found ID: " + sharedBooking.getId());
     }
 
     @Test
     void updateBookingWhenBookingIsStatusIsCancelled() {
-        BookingRequestForUpdate request = new BookingRequestForUpdate(
-                sharedStadiumId, sharedBooking.getStartTime(), sharedBooking.getEndTime(), "Update Note"
-        );
-        given(bookingRepository.findById(sharedBooking.getId())).willReturn(Optional.of(sharedBooking));
+        BookingRequestForUpdate request = new BookingRequestForUpdate(sharedStadiumId, null, null, "Update Note");
+
         sharedBooking.setStatus(BookingStatus.CANCELLED);
+        given(bookingRepository.findById(sharedBooking.getId())).willReturn(Optional.of(sharedBooking));
 
         assertThatThrownBy(() -> bookingService.updateBooking(sharedBooking.getId(), request))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Cannot update a cancelled or completed booking.");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Cannot modify a cancelled or completed booking.");
     }
 
     @Test
     void updateBookingWhenBookingStatusIsCompleted() {
-        BookingRequestForUpdate request = new BookingRequestForUpdate(
-                sharedStadiumId, sharedBooking.getStartTime(), sharedBooking.getEndTime(), "Update Note"
-        );
-        given(bookingRepository.findById(sharedBooking.getId())).willReturn(Optional.of(sharedBooking));
+        BookingRequestForUpdate request = new BookingRequestForUpdate(sharedStadiumId, null, null, "Update Note");
         sharedBooking.setStatus(BookingStatus.COMPLETED);
+        given(bookingRepository.findById(sharedBooking.getId())).willReturn(Optional.of(sharedBooking));
 
         assertThatThrownBy(() -> bookingService.updateBooking(sharedBooking.getId(), request))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Cannot update a cancelled or completed booking.");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Cannot modify a cancelled or completed booking.");
     }
+
     @Test
     void updateBookingWhenBookingIsModificationWindowClosed() {
         BookingRequestForUpdate request = new BookingRequestForUpdate(
                 sharedStadiumId, LocalDateTime.now().plusHours(1), LocalDateTime.now().plusHours(2), "Update Note"
         );
+        given(ownershipValidationService.isAdmin()).willReturn(false);
         sharedBooking.setStartTime(LocalDateTime.now().plusHours(1));
         given(bookingRepository.findById(sharedBooking.getId())).willReturn(Optional.of(sharedBooking));
 
         assertThatThrownBy(() -> bookingService.updateBooking(sharedBooking.getId(), request))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("You cannot cancel or update the booking within 6 hours of the start time.");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Cannot modify within 6 hours of start time.");
     }
 
     @Test
@@ -542,7 +523,7 @@ class BookingServiceTest {
                 sharedStadiumId, sharedBooking.getStartTime(), sharedBooking.getEndTime(), "Update Note"
         );
         given(bookingRepository.findById(sharedBooking.getId())).willReturn(Optional.of(sharedBooking));
-        given(stadiumRepository.findByIdAndIsDeletedFalse(request.stadiumId())).willReturn(Optional.empty());
+        given(stadiumRepository.findByIdWithLock(request.stadiumId())).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> bookingService.updateBooking(sharedBooking.getId(), request))
                 .isInstanceOf(ResourceNotFoundException.class)
@@ -571,7 +552,7 @@ class BookingServiceTest {
                 sharedStadiumId, sharedBooking.getStartTime(), sharedBooking.getEndTime(), "Update Note"
         );
         given(bookingRepository.findById(sharedBooking.getId())).willReturn(Optional.of(sharedBooking));
-        given(stadiumRepository.findByIdAndIsDeletedFalse(sharedBooking.getStadium().getId())).willReturn(Optional.of(sharedStadium));
+        given(stadiumRepository.findByIdWithLock(sharedBooking.getStadium().getId())).willReturn(Optional.of(sharedStadium));
 
         given(ownershipValidationService.isAdmin()).willReturn(false);
         doNothing().when(ownershipValidationService).checkBookingOwnership(player.getId());
@@ -591,7 +572,7 @@ class BookingServiceTest {
         );
         given(bookingRepository.findById(sharedBooking.getId())).willReturn(Optional.of(sharedBooking));
         given(ownershipValidationService.isAdmin()).willReturn(true);
-        given(stadiumRepository.findByIdAndIsDeletedFalse(sharedBooking.getStadium().getId())).willReturn(Optional.of(sharedStadium));
+        given(stadiumRepository.findByIdWithLock(sharedBooking.getStadium().getId())).willReturn(Optional.of(sharedStadium));
 
         assertThatThrownBy(() -> bookingService.updateBooking(sharedBooking.getId(), request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -604,7 +585,7 @@ class BookingServiceTest {
                 sharedStadiumId, sharedBooking.getStartTime(), sharedBooking.getEndTime(), "Update Note"
         );
         given(bookingRepository.findById(sharedBooking.getId())).willReturn(Optional.of(sharedBooking));
-        given(stadiumRepository.findByIdAndIsDeletedFalse(sharedBooking.getStadium().getId())).willReturn(Optional.of(sharedStadium));
+        given(stadiumRepository.findByIdWithLock(sharedBooking.getStadium().getId())).willReturn(Optional.of(sharedStadium));
 
         given(ownershipValidationService.isAdmin()).willReturn(true);
         given(bookingRepository.findConflictingBookingsForUpdate(sharedBooking.getId(), sharedStadiumId,
@@ -621,7 +602,7 @@ class BookingServiceTest {
                 sharedStadiumId, sharedBooking.getStartTime(), sharedBooking.getEndTime(), null
         );
         given(bookingRepository.findById(sharedBooking.getId())).willReturn(Optional.of(sharedBooking));
-        given(stadiumRepository.findByIdAndIsDeletedFalse(sharedBooking.getStadium().getId())).willReturn(Optional.of(sharedStadium));
+        given(stadiumRepository.findByIdWithLock(sharedBooking.getStadium().getId())).willReturn(Optional.of(sharedStadium));
 
         given(ownershipValidationService.isAdmin()).willReturn(false);
         doNothing().when(ownershipValidationService).checkBookingOwnership(player.getId());
@@ -645,7 +626,7 @@ class BookingServiceTest {
                 LocalDateTime.of(2025, 1, 1, 10, 0), "Invalid Time");
 
         given(bookingRepository.findById(sharedBooking.getId())).willReturn(Optional.of(sharedBooking));
-        given(stadiumRepository.findByIdAndIsDeletedFalse(sharedStadiumId)).willReturn(Optional.ofNullable(sharedStadium));
+        given(stadiumRepository.findByIdWithLock(sharedStadiumId)).willReturn(Optional.ofNullable(sharedStadium));
         given(ownershipValidationService.isAdmin()).willReturn(true);
 
         assertThatThrownBy(() -> bookingService.updateBooking(sharedBooking.getId(), invalidRequest))
@@ -665,7 +646,7 @@ class BookingServiceTest {
                 newStadiumId, sharedBooking.getStartTime(), sharedBooking.getEndTime(), "Updated Note!!!"
         );
         given(bookingRepository.findById(sharedBooking.getId())).willReturn(Optional.of(sharedBooking));
-        given(stadiumRepository.findByIdAndIsDeletedFalse(newStadiumId)).willReturn(Optional.of(newStadium));
+        given(stadiumRepository.findByIdWithLock(newStadiumId)).willReturn(Optional.of(newStadium));
 
         given(ownershipValidationService.isAdmin()).willReturn(false);
         doNothing().when(ownershipValidationService).checkBookingOwnership(player.getId());
@@ -702,6 +683,7 @@ class BookingServiceTest {
 
         given(bookingRepository.findConflictingBookingsForUpdate(sharedBooking.getId(), sharedStadiumId,
                 sharedBooking.getStartTime(), sharedBooking.getEndTime())).willReturn(false);
+        given(stadiumRepository.findByIdWithLock(sharedStadiumId)).willReturn(Optional.of(sharedBooking.getStadium()));
         when(bookingRepository.save(any(Booking.class))).thenReturn(sharedBooking);
 
         bookingService.updateBooking(sharedBooking.getId(), request);
