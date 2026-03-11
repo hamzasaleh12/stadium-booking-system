@@ -1,10 +1,7 @@
-package com.hamza.stadiumbooking;
+package com.hamza.stadiumbooking.user;
 
 import com.hamza.stadiumbooking.base.AbstractIntegrationTest;
 import com.hamza.stadiumbooking.base.AuthTestUtils;
-import com.hamza.stadiumbooking.user.Role;
-import com.hamza.stadiumbooking.user.User;
-import com.hamza.stadiumbooking.user.UserUpdateRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

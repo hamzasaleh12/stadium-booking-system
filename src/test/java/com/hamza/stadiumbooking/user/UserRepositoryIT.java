@@ -17,9 +17,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Transactional
 class UserRepositoryIT extends AbstractIntegrationTest {
+
     @Autowired
     private UserRepository userRepository;
+
     private User savedUser;
+
     @BeforeEach
     void setUp(){
         userRepository.deleteAll();
