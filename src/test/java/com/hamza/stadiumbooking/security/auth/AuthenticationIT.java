@@ -1,14 +1,11 @@
-package com.hamza.stadiumbooking;
+package com.hamza.stadiumbooking.security.auth;
 
 import com.hamza.stadiumbooking.base.AbstractIntegrationTest;
 import com.hamza.stadiumbooking.base.AuthTestUtils;
-import com.hamza.stadiumbooking.security.auth.LoginRequest;
-import com.hamza.stadiumbooking.stadium.StadiumRepository;
 import com.hamza.stadiumbooking.user.Role;
 import com.hamza.stadiumbooking.user.User;
 import com.hamza.stadiumbooking.user.UserRepository;
 import com.hamza.stadiumbooking.user.UserRequest;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +26,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
         @Autowired
         private AuthTestUtils authUtils;
+
+        @Autowired
+        protected UserRepository userRepository;
 
         @Autowired
         private PasswordEncoder passwordEncoder;

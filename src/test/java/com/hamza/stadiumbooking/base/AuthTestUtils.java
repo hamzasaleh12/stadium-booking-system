@@ -123,7 +123,6 @@ public class AuthTestUtils {
         return bookingRepository.save(b);
     }
 
-    // في كلاس AuthTestUtils
     public Booking createAndSaveBooking(Stadium s, User u, LocalDateTime startTime, int durationHours) {
         Booking b = Booking.builder()
                 .startTime(startTime.withSecond(0).withNano(0))

@@ -1,12 +1,9 @@
-package com.hamza.stadiumbooking;
+package com.hamza.stadiumbooking.booking;
 
 import com.hamza.stadiumbooking.base.AbstractIntegrationTest;
 import com.hamza.stadiumbooking.base.AuthTestUtils;
-import com.hamza.stadiumbooking.booking.Booking;
-import com.hamza.stadiumbooking.booking.BookingRequest;
-import com.hamza.stadiumbooking.booking.BookingRequestForUpdate;
-import com.hamza.stadiumbooking.booking.BookingStatus;
 import com.hamza.stadiumbooking.stadium.Stadium;
+import com.hamza.stadiumbooking.stadium.StadiumRepository;
 import com.hamza.stadiumbooking.user.Role;
 import com.hamza.stadiumbooking.user.User;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +28,12 @@ public class BookingAuthorizationIT extends AbstractIntegrationTest {
 
     @Autowired
     private AuthTestUtils authUtils;
+
+    @Autowired
+    protected StadiumRepository stadiumRepository;
+
+    @Autowired
+    protected BookingRepository bookingRepository;
 
     private String adminToken;
     private String m1Token;
