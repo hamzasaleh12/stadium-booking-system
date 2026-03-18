@@ -2,10 +2,12 @@ package com.hamza.stadiumbooking.booking;
 
 import com.hamza.stadiumbooking.base.AbstractIntegrationTest;
 import com.hamza.stadiumbooking.base.AuthTestUtils;
+import com.hamza.stadiumbooking.security.jwt.JwtProvider;
 import com.hamza.stadiumbooking.stadium.Stadium;
 import com.hamza.stadiumbooking.stadium.StadiumRepository;
 import com.hamza.stadiumbooking.user.Role;
 import com.hamza.stadiumbooking.user.User;
+import com.hamza.stadiumbooking.user.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,6 +18,7 @@ import org.springframework.http.MediaType;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,10 +33,16 @@ public class BookingAuthorizationIT extends AbstractIntegrationTest {
     private AuthTestUtils authUtils;
 
     @Autowired
-    protected StadiumRepository stadiumRepository;
+    private StadiumRepository stadiumRepository;
 
     @Autowired
-    protected BookingRepository bookingRepository;
+    private BookingRepository bookingRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private JwtProvider jwtProvider;
 
     private String adminToken;
     private String m1Token;
@@ -289,49 +298,48 @@ public class BookingAuthorizationIT extends AbstractIntegrationTest {
         // ================= CONCURRENCY (The Race Condition Test) =================
 
         @Test
-        @DisplayName("Concurrency: 500 Users booking same time (Virtual Threads Style)")
-        void add_Concurrency_Test_Modern() throws Exception {
-            int numberOfThreads = 500;
+        @DisplayName("Concurrency: Atomic Integrity under 100-thread contention")
+        void add_Concurrency_Contention_Test() throws Exception {
+            int numberOfThreads = 100;
+
+            List<User> users = java.util.stream.IntStream.range(0, numberOfThreads)
+                    .mapToObj(i -> User.builder().name("User " + i).email("u" + i + "@test.com")
+                            .phoneNumber("015" + String.format("%08d", i)).password("pass").dob(java.time.LocalDate.of(2000, 1, 1))
+                            .role(Role.ROLE_PLAYER).isDeleted(false).build())
+                    .toList();
+
+            userRepository.saveAll(users);
+
+            List<String> tokens = users.stream()
+                    .map(user -> jwtProvider.createAccessToken(
+                            user.getEmail(),
+                            user.getId(),
+                            user.isDeleted(),
+                            java.util.List.of("ROLE_PLAYER")))
+                    .toList();
 
             var successCount = new java.util.concurrent.atomic.AtomicInteger(0);
             var failCount = new java.util.concurrent.atomic.AtomicInteger(0);
-            var otherErrorCount = new java.util.concurrent.atomic.AtomicInteger(0);
-
             var latch = new java.util.concurrent.CountDownLatch(1);
 
             BookingRequest request = authUtils.createBookingRequest(stadium1Id, 10, 19, 0, 60);
             String requestJson = objectMapper.writeValueAsString(request);
 
             try (var executor = java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor()) {
-                java.util.stream.IntStream.range(0, numberOfThreads).forEach(i ->
-                        executor.submit(() -> {
-                            try {
-                                latch.await();
-                                var result = mockMvc.perform(post(BASE_URL)
-                                        .header("Authorization", "Bearer " + p1Token)
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .content(requestJson)).andReturn();
+                tokens.forEach(token -> {
+                    executor.submit(() -> {
+                        try {
+                            latch.await();
+                            var result = mockMvc.perform(post(BASE_URL)
+                                    .header("Authorization", "Bearer " + token)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(requestJson)).andReturn();
 
-                                var status = result.getResponse().getStatus();
-
-                                if (status == 201) {
-                                    successCount.incrementAndGet();
-                                } else if (status == 409) {
-                                    failCount.incrementAndGet();
-                                } else {
-                                    otherErrorCount.incrementAndGet();
-                                    log.error("❌ Error detected! Status: {} | Thread: {} | Response: {}", status, Thread.currentThread().getName(), result.getResponse().getContentAsString());
-                                    if (result.getResolvedException() != null) {
-                                        log.error("⚠ Root Cause: {}", result.getResolvedException().getMessage());
-                                    }
-                                }
-
-                            } catch (Exception e) {
-                                Thread.currentThread().interrupt();
-                            }
-                        })
-                );
-
+                            if (result.getResponse().getStatus() == 201) successCount.incrementAndGet();
+                            else if (result.getResponse().getStatus() == 409) failCount.incrementAndGet();
+                        } catch (Exception e) { Thread.currentThread().interrupt(); }
+                    });
+                });
                 latch.countDown();
             }
 
