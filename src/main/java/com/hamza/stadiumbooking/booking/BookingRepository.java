@@ -32,7 +32,7 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
         SELECT case WHEN COUNT(b) > 0 then true ELSE false END
         FROM Booking b\s
         WHERE b.stadium.id = :stadiumId
-        AND b.status = 'CONFIRMED'
+        AND b.status NOT IN ('CANCELLED', 'COMPLETED')
         AND (:endTime > b.startTime AND :startTime < b.endTime)
    \s""")
     boolean findConflictingBookingsForNew(
@@ -45,7 +45,7 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
         SELECT case WHEN COUNT(b) > 0 then true ELSE false END
         FROM Booking b\s
         WHERE b.stadium.id = :stadiumId
-        AND b.status = 'CONFIRMED'
+        AND b.status NOT IN ('CANCELLED', 'COMPLETED')
         AND b.id != :bookingId \s
         AND (:endTime > b.startTime AND :startTime < b.endTime)
    \s""")

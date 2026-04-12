@@ -55,7 +55,7 @@ public class Booking {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private BookingStatus status = BookingStatus.CONFIRMED;
+    private BookingStatus status = BookingStatus.PENDING;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)

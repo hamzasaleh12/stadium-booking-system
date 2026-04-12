@@ -105,6 +105,8 @@ public class BookingService {
 
         User user = ownershipValidationService.getCurrentUser();
         Booking booking = mapToEntity(bookingRequest, user, stadium);
+
+        booking.setStatus(BookingStatus.CONFIRMED);
         booking.validateDuration();
         booking.calculateTotalPrice();
 
@@ -153,6 +155,7 @@ public class BookingService {
         booking.setStartTime(newStartTime);
         booking.setEndTime(newEndTime);
         booking.setStadium(targetStadium);
+
         booking.validateDuration();
         booking.calculateTotalPrice();
 
@@ -178,7 +181,7 @@ public class BookingService {
     }
 
     private Booking mapToEntity(BookingRequest request, User user, Stadium stadium) {
-        return Booking.builder().user(user).stadium(stadium).startTime(request.startTime()).endTime(request.endTime()).note(request.note()).status(BookingStatus.CONFIRMED).build();
+        return Booking.builder().user(user).stadium(stadium).startTime(request.startTime()).endTime(request.endTime()).note(request.note()).build();
     }
 
     private BookingResponse mapToDto(Booking booking) {
