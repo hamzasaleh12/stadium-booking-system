@@ -51,13 +51,13 @@ class StadiumRepositoryIT extends AbstractIntegrationTest {
 
     @Test
     void existsByIdAndOwnerId() {
-        boolean test = stadiumRepository.existsByIdAndOwner_Id(savedStadium.getId(), savedUser.getId());
+        boolean test = stadiumRepository.existsByIdAndOwnerId(savedStadium.getId(), savedUser.getId());
         assertThat(test).isTrue();
     }
 
     @Test
     void notExistsByIdAndOwnerId() {
-        boolean test = stadiumRepository.existsByIdAndOwner_Id(savedStadium.getId(), UUID.randomUUID());
+        boolean test = stadiumRepository.existsByIdAndOwnerId(savedStadium.getId(), UUID.randomUUID());
         assertThat(test).isFalse();
     }
 

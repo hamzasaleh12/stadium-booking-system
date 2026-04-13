@@ -60,7 +60,7 @@ public class Stadium {
     @Column(name = "last_lock_at")
     private LocalDateTime lastLockAt;
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "stadium_features", joinColumns = @JoinColumn(name = "stadium_id"))
     @Column(name = "feature")
     @Builder.Default

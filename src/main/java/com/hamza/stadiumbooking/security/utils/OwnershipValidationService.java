@@ -55,7 +55,7 @@ public class OwnershipValidationService {
 
         Object principal = auth.getPrincipal();
         if (principal instanceof CustomUserDetails userDetails) {
-            return stadiumRepository.existsByIdAndOwner_Id(stadiumId, userDetails.getId());
+            return stadiumRepository.existsByIdAndOwnerId(stadiumId, userDetails.getId());
         }
         throw new IllegalStateException("Could not retrieve user ID.");
     }
