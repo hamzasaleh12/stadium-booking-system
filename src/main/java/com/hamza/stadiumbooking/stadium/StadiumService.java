@@ -119,7 +119,10 @@ public class StadiumService {
         if (request.openTime() != null) stadium.setOpenTime(request.openTime());
         if (request.closeTime() != null) stadium.setCloseTime(request.closeTime());
 
-        if (request.features() != null) stadium.setFeatures(request.features());
+        if (request.features() != null) {
+            stadium.getFeatures().clear();
+            stadium.getFeatures().addAll(request.features());
+        }
 
         Stadium savedStadium = stadiumRepository.save(stadium);
         log.info("Action: updateStadium | Success | Stadium ID: {} updated successfully", savedStadium.getId());

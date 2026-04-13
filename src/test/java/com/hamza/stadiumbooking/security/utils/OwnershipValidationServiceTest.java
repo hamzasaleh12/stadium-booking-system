@@ -218,7 +218,7 @@ class OwnershipValidationServiceTest {
     @Test
     void isStadiumOwner_whenTheRolesIsPlayer() {
         mockSecurityContextWith(customUserDetailsForPlayer);
-        given(stadiumRepository.existsByIdAndOwner_Id(sharedStadiumId, sharedPlayerId))
+        given(stadiumRepository.existsByIdAndOwnerId(sharedStadiumId, sharedPlayerId))
                 .willReturn(false);
 
         boolean isStadiumOwner = ownershipValidationService.isStadiumOwner(sharedStadiumId);
@@ -228,7 +228,7 @@ class OwnershipValidationServiceTest {
     @Test
     void isStadiumOwner_whenTheRolesIsManager() {
         mockSecurityContextWith(customUserDetailsForManager);
-        given(stadiumRepository.existsByIdAndOwner_Id(sharedStadiumId, sharedManagerId))
+        given(stadiumRepository.existsByIdAndOwnerId(sharedStadiumId, sharedManagerId))
                 .willReturn(true);
 
         boolean isStadiumOwner = ownershipValidationService.isStadiumOwner(sharedStadiumId);
@@ -256,7 +256,7 @@ class OwnershipValidationServiceTest {
     @Test
     void checkOwnership_shouldThrowAccessDenied_whenNotStadiumOwner() {
         mockSecurityContextWith(customUserDetailsForPlayer);
-        given(stadiumRepository.existsByIdAndOwner_Id(sharedStadiumId, sharedPlayerId))
+        given(stadiumRepository.existsByIdAndOwnerId(sharedStadiumId, sharedPlayerId))
                 .willReturn(false);
 
         assertThatThrownBy(() -> ownershipValidationService.checkOwnership(sharedStadiumId)).isInstanceOf(AccessDeniedException.class)
@@ -265,7 +265,7 @@ class OwnershipValidationServiceTest {
     @Test
     void checkOwnership_shouldSucceed() {
         mockSecurityContextWith(customUserDetailsForPlayer);
-        given(stadiumRepository.existsByIdAndOwner_Id(sharedStadiumId, sharedPlayerId))
+        given(stadiumRepository.existsByIdAndOwnerId(sharedStadiumId, sharedPlayerId))
                 .willReturn(true);
 
         assertDoesNotThrow(() -> ownershipValidationService.checkOwnership(sharedStadiumId));
