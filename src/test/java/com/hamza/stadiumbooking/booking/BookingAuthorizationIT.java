@@ -232,7 +232,7 @@ public class BookingAuthorizationIT extends AbstractIntegrationTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.msg").value(org.hamcrest.Matchers.containsString("Stadium is closed")));
+                    .andExpect(jsonPath("$.validationErrors.msg").value(org.hamcrest.Matchers.containsString("Stadium is closed")));
         }
 
         @Test

@@ -439,20 +439,6 @@ class BookingServiceTest {
     }
 
     @Test
-    void addBooking_ShouldThrowException_WhenStadiumIsClosed() {
-        BookingRequest request = new BookingRequest(
-                sharedStadiumId, LocalDateTime.of(2026,2,1,6,0,0),
-                LocalDateTime.of(2026,2,1,8,0,0), "Conflict Note"
-        );
-        given(stadiumRepository.findByIdWithLock(sharedStadiumId)).willReturn(Optional.of(sharedStadium));
-
-
-        assertThatThrownBy(() -> bookingService.addBooking(request))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Stadium is closed during the selected time. Operating hours: " + sharedStadium.getOpenTime() + " to " + sharedStadium.getCloseTime());
-    }
-
-    @Test
     void addBooking() {
         BookingRequest request = new BookingRequest(
                 sharedStadiumId, startTime, endTime, "Success Note"

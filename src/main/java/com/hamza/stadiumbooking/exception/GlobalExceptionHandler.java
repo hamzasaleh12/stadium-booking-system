@@ -15,6 +15,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingPathVariableException;
 import org.springframework.web.bind.MissingRequestCookieException;
@@ -30,8 +31,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.ZonedDateTime;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @ControllerAdvice
@@ -107,14 +108,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Object> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach((error) -> {
-            String fieldName = ((org.springframework.validation.FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            errors.put(fieldName, errorMessage);
-        });
-        ApiError apiError = new ApiError("Validation Failed", HttpStatus.BAD_REQUEST, ZonedDateTime.now(), errors);
-        return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
+        var errors = ex.getBindingResult().getAllErrors().stream()
+                .collect(Collectors.toMap(
+                        error -> error instanceof FieldError fe ? fe.getField() : "msg",
+                        error -> error.getDefaultMessage() != null ? error.getDefaultMessage() : "Invalid value",
+                        (existing, replacement) -> existing + " | " + replacement
+                ));
+
+        return error("Validation Failed", HttpStatus.BAD_REQUEST, errors);
     }
 
     @ExceptionHandler({ConstraintViolationException.class, WebExchangeBindException.class})
@@ -204,6 +205,10 @@ public class GlobalExceptionHandler {
 
     private ResponseEntity<Object> error(String msg, HttpStatus status){
         ApiError apiError = new ApiError(msg, status, ZonedDateTime.now());
+        return new ResponseEntity<>(apiError, status);
+    }
+    private ResponseEntity<Object> error(String msg, HttpStatus status, Map<String, String> validationErrors) {
+        ApiError apiError = new ApiError(msg, status, ZonedDateTime.now(), validationErrors);
         return new ResponseEntity<>(apiError, status);
     }
 }

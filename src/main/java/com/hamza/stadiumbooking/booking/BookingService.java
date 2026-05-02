@@ -91,10 +91,6 @@ public class BookingService {
 
         Stadium stadium = stadiumRepository.findByIdWithLock(bookingRequest.stadiumId()).orElseThrow(() -> new ResourceNotFoundException("Stadium not found."));
 
-        if (!stadium.isOpenAt(bookingRequest.startTime().toLocalTime(), bookingRequest.endTime().toLocalTime()))
-            throw new IllegalArgumentException("Stadium is closed during the selected time. Operating hours: " + stadium.getOpenTime() + " to " + stadium.getCloseTime());
-
-
         boolean hasConflict = bookingRepository.findConflictingBookingsForNew(bookingRequest.stadiumId(), bookingRequest.startTime(), bookingRequest.endTime());
 
         if (hasConflict) throw new ConflictingBookingsException("This time is already booked");
