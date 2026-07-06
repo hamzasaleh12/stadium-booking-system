@@ -16,7 +16,7 @@ import java.util.UUID;
 
 @Repository
 public interface StadiumRepository extends JpaRepository<Stadium, UUID> {
-    @EntityGraph(attributePaths = {"features", "owner"})
+    @EntityGraph(attributePaths = {"owner"})
     Page<Stadium> findAllByIsDeletedFalse(Pageable pageable);
 
     @EntityGraph(attributePaths = {"features", "owner"})
