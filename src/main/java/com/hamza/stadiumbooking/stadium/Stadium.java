@@ -4,6 +4,7 @@ import com.hamza.stadiumbooking.booking.validation.TimeValidationUtils;
 import com.hamza.stadiumbooking.user.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -64,6 +65,7 @@ public class Stadium {
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "stadium_features", joinColumns = @JoinColumn(name = "stadium_id"))
     @Column(name = "feature")
+    @BatchSize(size = 20)
     @Builder.Default
     private Set<String> features = new HashSet<>();
 

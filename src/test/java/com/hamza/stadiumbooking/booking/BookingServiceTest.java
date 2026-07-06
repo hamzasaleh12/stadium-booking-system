@@ -185,7 +185,7 @@ class BookingServiceTest {
         given(ownershipValidationService.isAdmin()).willReturn(false);
 
         assertThatThrownBy(() -> bookingService.getAllBookings(null, null, null))
-                .isInstanceOf(ResourceNotFoundException.class)
+                .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Error: Stadium ID is required for managers.");
     }
 
@@ -194,7 +194,7 @@ class BookingServiceTest {
         given(ownershipValidationService.isAdmin()).willReturn(false);
 
         assertThatThrownBy(() -> bookingService.getAllBookings(null, null, sharedUserId))
-                .isInstanceOf(ResourceNotFoundException.class)
+                .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Error: Stadium ID is required for managers.");
     }
 

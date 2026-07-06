@@ -38,6 +38,9 @@ public class BookingService {
         boolean isAdmin = ownershipValidationService.isAdmin();
         log.info("Action: getAllBookings | Params: stadiumId={}, userId={}, isAdmin={}", stadiumId, userId, isAdmin);
 
+        // TODO: [Refactor] Replace this entire if-else chain with Spring Data JPA Specification.
+        // Create BookingSpecification class to build dynamic queries (Criteria API) based on non-null parameters.
+
         Page<Booking> bookings;
         if (isAdmin) {
             if (stadiumId != null && userId != null)
@@ -54,7 +57,7 @@ public class BookingService {
         } else {
             if (stadiumId == null) {
                 log.error("Action: getAllBookings | Error: Missing stadiumId for non-admin user");
-                throw new ResourceNotFoundException("Error: Stadium ID is required for managers.");
+                throw new IllegalArgumentException("Error: Stadium ID is required for managers.");
             }
 
             ownershipValidationService.checkOwnership(stadiumId);

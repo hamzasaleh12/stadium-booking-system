@@ -21,11 +21,15 @@ import java.util.UUID;
 public class BookingController {
     private final BookingService bookingService;
 
+    // TODO: [Refactor] Consolidate the following 4 GET endpoints into a single endpoint:
+    // @GetMapping
+    // It should accept @RequestParam(required = false) UUID stadiumId and @RequestParam(required = false) UUID userId.
+
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<BookingResponse>> getAdminGlobalBookings(@ParameterObject
                                                         @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable){
-        log.info("Incoming request to get ALL global bookings (Admin View)");
+        log.debug("Incoming request to get ALL global bookings (Admin View)");
         return ResponseEntity.ok(bookingService.getAllBookings(pageable, null, null));
     }
 
@@ -34,7 +38,7 @@ public class BookingController {
     public ResponseEntity<Page<BookingResponse>> getAllBookings(@ParameterObject
                                                 @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable,
                                                 @PathVariable UUID stadiumId){
-        log.info("Incoming request to get bookings for Stadium ID: {}", stadiumId);
+        log.debug("Incoming request to get bookings for Stadium ID: {}", stadiumId);
         return ResponseEntity.ok(bookingService.getAllBookings(pageable, stadiumId, null));
     }
 
@@ -43,7 +47,7 @@ public class BookingController {
     public ResponseEntity<Page<BookingResponse>> getBookingsByPlayer(
             @ParameterObject @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable,
             @PathVariable UUID playerId) {
-        log.info("Admin fetching bookings for player: {}", playerId);
+        log.debug("Admin fetching bookings for player: {}", playerId);
         return ResponseEntity.ok(bookingService.getAllBookings(pageable, null, playerId));
     }
 
@@ -54,7 +58,7 @@ public class BookingController {
             @PathVariable UUID stadiumId,
             @PathVariable UUID playerId) {
 
-        log.info("Request to get bookings for Player ID: {} inside Stadium ID: {}", playerId, stadiumId);
+        log.debug("Request to get bookings for Player ID: {} inside Stadium ID: {}", playerId, stadiumId);
 
         return ResponseEntity.ok(bookingService.getAllBookings(pageable, stadiumId, playerId));
     }
@@ -63,14 +67,14 @@ public class BookingController {
     @PreAuthorize("hasAnyRole('PLAYER', 'ADMIN')")
     public ResponseEntity<Page<BookingResponse>> getMyBookings(@ParameterObject
                                                                @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
-        log.info("Incoming request to get My Bookings (Player View)");
+        log.debug("Incoming request to get My Bookings (Player View)");
         return ResponseEntity.ok(bookingService.getMyBookings(pageable));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'PLAYER')")
     public BookingResponse getBookingById(@PathVariable UUID id){
-        log.info("Incoming request to get the booking with ID {}", id);
+        log.debug("Incoming request to get the booking with ID {}", id);
         return bookingService.getBookingById(id);
     }
 
@@ -79,6 +83,7 @@ public class BookingController {
     public ResponseEntity<BookingResponse> addBooking(@RequestBody @Valid BookingRequest bookingRequest){
         log.info("Incoming request to create booking for Stadium ID: {} at {}", bookingRequest.stadiumId(), bookingRequest.startTime());
         BookingResponse bookingResponse = bookingService.addBooking(bookingRequest);
+        log.info("Action: addBooking | Success | Booking Added ID: {}", bookingResponse.id());
         return new ResponseEntity<>(bookingResponse, HttpStatus.CREATED);
     }
 
