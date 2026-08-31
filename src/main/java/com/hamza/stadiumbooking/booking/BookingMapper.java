@@ -5,6 +5,11 @@ import org.mapstruct.*;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface BookingMapper {
 
+    @Condition
+    default boolean isNotBlank(String value) {
+        return value != null && !value.isBlank();
+    }
+
     @Mapping(target = "stadiumId", source = "stadium.id")
     @Mapping(target = "stadiumName", source = "stadium.name")
     @Mapping(target = "userId", source = "user.id")

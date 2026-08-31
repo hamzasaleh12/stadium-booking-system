@@ -59,4 +59,32 @@ class UserMapperTest {
         assertEquals("oldPassword", user.getPassword());
         assertEquals(Role.ROLE_PLAYER, user.getRole());
     }
+
+    @Test
+    void shouldIgnoreBlankStringsOnUpdate() {
+        User user = User.builder()
+                .name("Old Name")
+                .email("old@gmail.com")
+                .phoneNumber("01000000000")
+                .password("oldPassword")
+                .dob(LocalDate.of(1990, 1, 1))
+                .role(Role.ROLE_PLAYER)
+                .build();
+
+        UserUpdateRequest request = new UserUpdateRequest(
+                "   ",
+                "",
+                " ",
+                "   ",
+                null
+        );
+
+        userMapper.updateUserFromRequest(request, user);
+
+        assertEquals("Old Name", user.getName());
+        assertEquals("old@gmail.com", user.getEmail());
+        assertEquals("01000000000", user.getPhoneNumber());
+        assertEquals(LocalDate.of(1990, 1, 1), user.getDob());
+        assertEquals("oldPassword", user.getPassword());
+    }
 }

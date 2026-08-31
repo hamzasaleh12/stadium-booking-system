@@ -5,6 +5,11 @@ import org.mapstruct.*;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface StadiumMapper {
 
+    @Condition
+    default boolean isNotBlank(String value) {
+        return value != null && !value.isBlank();
+    }
+
     StadiumResponse toResponse(Stadium stadium);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

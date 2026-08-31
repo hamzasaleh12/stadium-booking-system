@@ -81,4 +81,32 @@ class BookingMapperTest {
         assertEquals("new note", booking.getNote());
         assertNull(booking.getStadium());
     }
+
+    @Test
+    void shouldIgnoreBlankStringsOnUpdate() {
+        Booking booking = Booking.builder()
+                .startTime(LocalDateTime.of(2026, 9, 10, 18, 0))
+                .endTime(LocalDateTime.of(2026, 9, 10, 19, 0))
+                .note("old note")
+                .build();
+
+        BookingRequestForUpdate request = new BookingRequestForUpdate(
+                null,
+                null,
+                null,
+                "   "
+        );
+
+        BookingUpdateContext ctx = new BookingUpdateContext(
+                LocalDateTime.of(2026, 9, 10, 18, 0),
+                LocalDateTime.of(2026, 9, 10, 19, 0),
+                null
+        );
+
+        bookingMapper.updateBookingFromRequest(request, booking, ctx);
+
+        assertEquals(LocalDateTime.of(2026, 9, 10, 18, 0), booking.getStartTime());
+        assertEquals(LocalDateTime.of(2026, 9, 10, 19, 0), booking.getEndTime());
+        assertEquals("old note", booking.getNote());
+    }
 }

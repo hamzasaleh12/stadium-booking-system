@@ -5,6 +5,11 @@ import org.mapstruct.*;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface UserMapper {
 
+    @Condition
+    default boolean isNotBlank(String value) {
+        return value != null && !value.isBlank();
+    }
+
     UserResponse toResponse(User user);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

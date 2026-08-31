@@ -76,4 +76,40 @@ class StadiumMapperTest {
         assertEquals("new.jpg", stadium.getPhotoUrl());
         assertEquals("Alex", stadium.getLocation());
     }
+
+    @Test
+    void shouldIgnoreBlankStringsOnUpdate() {
+        Stadium stadium = Stadium.builder()
+                .name("Old Name")
+                .location("Alex")
+                .pricePerHour(100.0)
+                .ballRentalFee(5)
+                .openTime(LocalTime.of(8, 0))
+                .closeTime(LocalTime.of(20, 0))
+                .features(new java.util.HashSet<>(Set.of("old")))
+                .photoUrl("old.jpg")
+                .type(Type.ELEVEN_A_SIDE)
+                .build();
+
+        StadiumRequestForUpdate request = new StadiumRequestForUpdate(
+                "   ",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                ""
+        );
+
+        StadiumUpdateContext ctx = new StadiumUpdateContext(null);
+        stadiumMapper.updateStadiumFromRequest(request, stadium, ctx);
+
+        assertEquals("Old Name", stadium.getName());
+        assertEquals("Alex", stadium.getLocation());
+        assertEquals(100.0, stadium.getPricePerHour());
+        assertEquals(5, stadium.getBallRentalFee());
+        assertEquals("old.jpg", stadium.getPhotoUrl());
+        assertEquals(Set.of("old"), stadium.getFeatures());
+    }
 }
