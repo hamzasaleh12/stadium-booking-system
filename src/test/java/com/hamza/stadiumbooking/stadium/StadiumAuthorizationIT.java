@@ -126,7 +126,7 @@ class StadiumAuthorizationIT extends AbstractIntegrationTest {
         @Test
         @DisplayName("Owner Manager can update their own stadium (200 OK)")
         void ownerCanUpdateStadium() throws Exception {
-            StadiumRequestForUpdate update = new StadiumRequestForUpdate("Updated Anfield", 600.0, 60, null, null, null, null);
+            StadiumRequestForUpdate update = new StadiumRequestForUpdate("Updated Anfield", 600.0, 60, null, null, null, Type.ELEVEN_A_SIDE, null);
             mockMvc.perform(put(API_V1_STADIUMS + "/{id}", stadium1Id)
                             .header("Authorization", "Bearer " + manager1Token)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -137,7 +137,7 @@ class StadiumAuthorizationIT extends AbstractIntegrationTest {
         @Test
         @DisplayName("Non-Owner Manager cannot update other's stadium (403 Forbidden)")
         void nonOwnerCannotUpdateStadium() throws Exception {
-            StadiumRequestForUpdate update = new StadiumRequestForUpdate("Hacked", 1.0, 0, null, null, null, null);
+            StadiumRequestForUpdate update = new StadiumRequestForUpdate("Hacked", 1.0, 0, null, null, null, Type.ELEVEN_A_SIDE, null);
             mockMvc.perform(put(API_V1_STADIUMS + "/{id}", stadium1Id)
                             .header("Authorization", "Bearer " + manager2Token)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -148,7 +148,7 @@ class StadiumAuthorizationIT extends AbstractIntegrationTest {
         @Test
         @DisplayName("Admin can update ANY stadium (200 OK)")
         void adminCanUpdateAnyStadium() throws Exception {
-            StadiumRequestForUpdate update = new StadiumRequestForUpdate("Admin Override", 700.0, 70, null, null, null, null);
+            StadiumRequestForUpdate update = new StadiumRequestForUpdate("Admin Override", 700.0, 70, null, null, null, Type.ELEVEN_A_SIDE, null);
             mockMvc.perform(put(API_V1_STADIUMS + "/{id}", stadium1Id)
                             .header("Authorization", "Bearer " + adminToken)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -218,7 +218,7 @@ class StadiumAuthorizationIT extends AbstractIntegrationTest {
 
             // 3. Update the stadium: Inside updateStadium method (Call 2)
             StadiumRequestForUpdate updateRequest = new StadiumRequestForUpdate(
-                    "Anfield New Era", 1000.0, 150, null, null, null, "https://new-anfield.com"
+                    "Anfield New Era", 1000.0, 150, null, null, null, Type.ELEVEN_A_SIDE, "https://new-anfield.com"
             );
 
             mockMvc.perform(put(API_V1_STADIUMS + "/{id}", stadium1Id)

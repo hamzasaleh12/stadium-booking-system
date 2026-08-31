@@ -46,6 +46,8 @@ class BookingServiceTest {
     private BookingService bookingService;
     @Mock
     private OwnershipValidationService ownershipValidationService;
+    @Mock
+    private BookingMapper bookingMapper;
 
     private User manager;
     private final UUID sharedUserId = UUID.randomUUID();
@@ -90,6 +92,49 @@ class BookingServiceTest {
         );
         bookingList = List.of(sharedBooking);
         bookingsPage = new PageImpl<>(bookingList);
+
+        lenient().when(bookingMapper.toResponse(any(Booking.class))).thenAnswer(invocation -> {
+            Booking booking = invocation.getArgument(0);
+            return new BookingResponse(
+                    booking.getId(),
+                    booking.getStartTime(),
+                    booking.getEndTime(),
+                    booking.getTotalPrice(),
+                    booking.getStatus(),
+                    booking.getStadium() != null ? booking.getStadium().getId() : null,
+                    booking.getStadium() != null ? booking.getStadium().getName() : null,
+                    booking.getUser() != null ? booking.getUser().getId() : null,
+                    booking.getUser() != null ? booking.getUser().getName() : null,
+                    booking.getNote()
+            );
+        });
+
+        lenient().when(bookingMapper.toEntity(any(BookingRequest.class))).thenAnswer(invocation -> {
+            BookingRequest request = invocation.getArgument(0);
+            Booking booking = new Booking();
+            booking.setStartTime(request.startTime());
+            booking.setEndTime(request.endTime());
+            booking.setNote(request.note());
+            booking.setStadium(new Stadium());
+            booking.setUser(new User());
+            return booking;
+        });
+
+        lenient().doAnswer(invocation -> {
+            BookingRequestForUpdate request = invocation.getArgument(0);
+            Booking booking = invocation.getArgument(1);
+            BookingUpdateContext context = invocation.getArgument(2);
+            if (request.note() != null) booking.setNote(request.note());
+            if (request.startTime() != null) booking.setStartTime(request.startTime());
+            if (request.endTime() != null) booking.setEndTime(request.endTime());
+            if (context != null && context.targetStadium() != null) {
+                booking.setStadium(context.targetStadium());
+            }
+            if (request.stadiumId() != null && context != null) {
+                booking.setStadium(context.targetStadium());
+            }
+            return null;
+        }).when(bookingMapper).updateBookingFromRequest(any(BookingRequestForUpdate.class), any(Booking.class), any(BookingUpdateContext.class));
     }
 
     @Test

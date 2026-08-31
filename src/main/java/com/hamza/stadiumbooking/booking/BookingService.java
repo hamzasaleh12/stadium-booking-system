@@ -25,13 +25,14 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final StadiumRepository stadiumRepository;
     private final OwnershipValidationService ownershipValidationService;
+    private final BookingMapper bookingMapper;
 
     public Page<BookingResponse> getMyBookings(Pageable pageable) {
         UUID currentUserId = ownershipValidationService.getCurrentUserId();
         log.info("Action: getMyBookings | Requesting bookings for User ID: {}", currentUserId);
         Page<Booking> bookings = bookingRepository.findAllByUserId(pageable, currentUserId);
         log.info("Action: getMyBookings | Found {} bookings", bookings.getTotalElements());
-        return bookings.map(this::mapToDto);
+        return bookings.map(bookingMapper::toResponse);
     }
 
     public Page<BookingResponse> getAllBookings(Pageable pageable, UUID stadiumId, UUID userId) {
@@ -65,7 +66,7 @@ public class BookingService {
             bookings = (userId != null) ? bookingRepository.findByUserIdAndStadiumId(pageable, userId, stadiumId)
                     : bookingRepository.findByStadiumId(pageable, stadiumId);
         }
-        return bookings.map(this::mapToDto);
+        return bookings.map(bookingMapper::toResponse);
     }
 
     public BookingResponse getBookingById(UUID id) {
@@ -84,7 +85,7 @@ public class BookingService {
             else if (!ownershipValidationService.isStadiumOwner(booking.getStadium().getId()))
                 throw new AccessDeniedException("You can only view bookings for your own stadiums.");
         }
-        return mapToDto(booking);
+        return bookingMapper.toResponse(booking);
     }
 
     @Transactional
@@ -103,14 +104,15 @@ public class BookingService {
         stadiumRepository.save(stadium);
 
         User user = ownershipValidationService.getCurrentUser();
-        Booking booking = mapToEntity(bookingRequest, user, stadium);
-
+        Booking booking = bookingMapper.toEntity(bookingRequest);
+        booking.setUser(user);
+        booking.setStadium(stadium);
         booking.setStatus(BookingStatus.CONFIRMED);
         booking.validateDuration();
         booking.calculateTotalPrice();
 
         // Save triggers JPA Hooks (@PrePersist) for Duration & Price
-        return mapToDto(bookingRepository.save(booking));
+        return bookingMapper.toResponse(bookingRepository.save(booking));
     }
 
     @Transactional
@@ -149,17 +151,14 @@ public class BookingService {
         targetStadium.setLastLockAt(LocalDateTime.now());
         stadiumRepository.save(targetStadium);
 
-        if (request.note() != null) booking.setNote(request.note());
-
-        booking.setStartTime(newStartTime);
-        booking.setEndTime(newEndTime);
-        booking.setStadium(targetStadium);
+        BookingUpdateContext bookingUpdateContext = new BookingUpdateContext(newStartTime, newEndTime, targetStadium);
+        bookingMapper.updateBookingFromRequest(request, booking, bookingUpdateContext);
 
         booking.validateDuration();
         booking.calculateTotalPrice();
 
         Booking savedBooking = bookingRepository.save(booking);
-        return mapToDto(savedBooking);
+        return bookingMapper.toResponse(savedBooking);
     }
 
     // --- PRIVATE HELPERS ---
@@ -179,11 +178,4 @@ public class BookingService {
         return booking;
     }
 
-    private Booking mapToEntity(BookingRequest request, User user, Stadium stadium) {
-        return Booking.builder().user(user).stadium(stadium).startTime(request.startTime()).endTime(request.endTime()).note(request.note()).build();
-    }
-
-    private BookingResponse mapToDto(Booking booking) {
-        return new BookingResponse(booking.getId(), booking.getStartTime(), booking.getEndTime(), booking.getTotalPrice(), booking.getStatus(), booking.getStadium().getId(), booking.getStadium().getName(), booking.getUser().getId(), booking.getUser().getName(), booking.getNote());
-    }
 }
