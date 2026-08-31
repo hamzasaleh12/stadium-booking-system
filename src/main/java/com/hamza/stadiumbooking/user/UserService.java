@@ -22,10 +22,11 @@ public class UserService{
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserMapper userMapper;
 
     public Page<UserResponse> getAllUsers(Pageable pageable) {
         log.info("Action: getAllUsers | Fetching users from DB (Page: {})", pageable.getPageNumber());
-        return userRepository.findAllByIsDeletedFalse(pageable).map(this::mapToDto);
+        return userRepository.findAllByIsDeletedFalse(pageable).map(userMapper::toResponse);
     }
 
     public UserResponse getUserById(UUID id) {
@@ -34,7 +35,7 @@ public class UserService{
                     log.error("Action: getUserById | Failure | User ID {} not found", id);
                     return new ResourceNotFoundException("User not found with ID: " + id);
                 });
-        return mapToDto(user);
+        return userMapper.toResponse(user);
     }
 
     public UUID getUserIdByEmail(String email) {
@@ -65,12 +66,12 @@ public class UserService{
             throw new IllegalArgumentException("The age must be at least 5 years to register.");
         }
 
-        User newUser = mapToEntity(userRequest);
+        User newUser = userMapper.toEntity(userRequest);
         newUser.setPassword(passwordEncoder.encode(userRequest.password()));
         User savedUser = userRepository.save(newUser);
 
         log.info("Action: addUser | Success | User registered with ID: {}", savedUser.getId());
-        return mapToDto(savedUser);
+        return userMapper.toResponse(savedUser);
     }
 
     @Transactional
@@ -105,25 +106,19 @@ public class UserService{
             user.setPassword(passwordEncoder.encode(request.password()));
         }
 
-        if (request.name() != null && !request.name().isEmpty()) {
-            user.setName(request.name());
-        }
-
         if (request.email() != null && !request.email().isEmpty() && !request.email().equals(user.getEmail())) {
             if (userRepository.findByEmailAndIsDeletedFalse(request.email()).isPresent()) {
                 log.warn("Action: updateUser | Conflict | Email {} is already taken", request.email());
                 throw new EmailTakenException("Email " + request.email() + " is already taken.");
             }
-            user.setEmail(request.email());
         }
 
         if (request.phoneNumber() != null && !request.phoneNumber().equals(user.getPhoneNumber())) {
-                if (userRepository.existsByPhoneNumberAndIsDeletedFalse(request.phoneNumber())) {
-                    log.warn("Action: updateUser | Conflict | Phone {} is already taken", request.phoneNumber());
-                    throw new PhoneNumberTakenException("Phone number " + request.phoneNumber() + " is already taken.");
-                }
-                user.setPhoneNumber(request.phoneNumber());
+            if (userRepository.existsByPhoneNumberAndIsDeletedFalse(request.phoneNumber())) {
+                log.warn("Action: updateUser | Conflict | Phone {} is already taken", request.phoneNumber());
+                throw new PhoneNumberTakenException("Phone number " + request.phoneNumber() + " is already taken.");
             }
+        }
 
         if (request.dob() != null) {
             int age = Period.between(request.dob(), LocalDate.now()).getYears();
@@ -131,12 +126,13 @@ public class UserService{
                 log.warn("Action: updateUser | Validation Failed | Age {} is too young for User ID: {}", age, userId);
                 throw new IllegalArgumentException("Age must be at least 5 years");
             }
-            user.setDob(request.dob());
         }
+
+        userMapper.updateUserFromRequest(request, user);
 
         User savedUser = userRepository.save(user);
         log.info("Action: updateUser | Success | User ID {} updated successfully", savedUser.getId());
-        return mapToDto(savedUser);
+        return userMapper.toResponse(savedUser);
     }
 
     @Transactional
@@ -156,27 +152,6 @@ public class UserService{
 
         User savedUser = userRepository.save(user);
         log.info("Action: changeUserRole | Success | User ID: {} role updated to {}", userId, savedUser.getRole());
-        return mapToDto(savedUser);
-    }
-
-    private UserResponse mapToDto(User user) {
-        return new UserResponse(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getPhoneNumber(),
-                user.getRole(),
-                user.getAge()
-        );
-    }
-
-    private User mapToEntity(UserRequest request) {
-        return User.builder()
-                .name(request.name())
-                .email(request.email())
-                .phoneNumber(request.phoneNumber())
-                .password(request.password())
-                .dob(request.dob())
-                .build();
+        return userMapper.toResponse(savedUser);
     }
 }

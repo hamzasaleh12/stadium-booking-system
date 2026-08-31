@@ -30,6 +30,8 @@ class UserServiceTest {
     private UserService userService;
     @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock
+    private UserMapper userMapper;
 
     // --- Shared Test Data ---
     private final UUID sharedUserId = UUID.randomUUID();
@@ -55,6 +57,29 @@ class UserServiceTest {
                 sharedOriginalUser.getDob(), null,null,sharedOriginalUser.getRole(),false
         );
         pageable = PageRequest.of(0, 10);
+
+        lenient().when(userMapper.toResponse(any(User.class))).thenAnswer(invocation -> {
+            User user = invocation.getArgument(0);
+            return new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getPhoneNumber(), user.getRole(), user.getAge());
+        });
+
+        lenient().when(userMapper.toEntity(any(UserRequest.class))).thenAnswer(invocation -> {
+            UserRequest request = invocation.getArgument(0);
+            return new User(
+                    UUID.randomUUID(), 0L, request.name(), request.email(), request.phoneNumber(),
+                    request.password(), request.dob(), null, null, Role.ROLE_PLAYER, false
+            );
+        });
+
+        lenient().doAnswer(invocation -> {
+            UserUpdateRequest request = invocation.getArgument(0);
+            User user = invocation.getArgument(1);
+            if (request.name() != null && !request.name().isBlank()) user.setName(request.name());
+            if (request.email() != null && !request.email().isBlank()) user.setEmail(request.email());
+            if (request.phoneNumber() != null && !request.phoneNumber().isBlank()) user.setPhoneNumber(request.phoneNumber());
+            if (request.dob() != null) user.setDob(request.dob());
+            return null;
+        }).when(userMapper).updateUserFromRequest(any(UserUpdateRequest.class), any(User.class));
     }
 
     @Test

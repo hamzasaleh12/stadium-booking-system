@@ -19,6 +19,8 @@ public record StadiumRequestForUpdate(
 
         Set<String> features,
 
+        Type type,
+
         String photoUrl
 ) {
 }

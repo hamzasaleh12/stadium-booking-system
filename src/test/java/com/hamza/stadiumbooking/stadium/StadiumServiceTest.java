@@ -34,6 +34,8 @@ class StadiumServiceTest {
     private StadiumService stadiumService;
     @Mock
     private OwnershipValidationService ownershipValidationService;
+    @Mock
+    private StadiumMapper stadiumMapper;
 
     private final UUID sharedManagerId = UUID.randomUUID();
     private final UUID sharedStadiumId = UUID.randomUUID();
@@ -71,6 +73,69 @@ class StadiumServiceTest {
         );
         stadiums = List.of(sharedStadiumCopy);
         stadiumPage = new PageImpl<>(stadiums);
+
+        lenient().when(stadiumMapper.toResponse(any(Stadium.class))).thenAnswer(invocation -> {
+            Stadium stadium = invocation.getArgument(0);
+            return new StadiumResponse(
+                    stadium.getId(),
+                    stadium.getName(),
+                    stadium.getLocation(),
+                    stadium.getPricePerHour(),
+                    stadium.getBallRentalFee(),
+                    stadium.getOpenTime(),
+                    stadium.getCloseTime(),
+                    new HashSet<>(stadium.getFeatures()),
+                    stadium.getType(),
+                    stadium.getPhotoUrl(),
+                    stadium.getOwner() != null ? stadium.getOwner().getId() : null
+            );
+        });
+
+        lenient().when(stadiumMapper.toEntity(any(StadiumRequest.class))).thenAnswer(invocation -> {
+            StadiumRequest request = invocation.getArgument(0);
+            return Stadium.builder()
+                    .name(request.name())
+                    .location(request.location())
+                    .photoUrl(request.photoUrl())
+                    .pricePerHour(request.pricePerHour())
+                    .ballRentalFee(request.ballRentalFee() != null ? request.ballRentalFee() : 0)
+                    .type(request.type())
+                    .openTime(request.openTime())
+                    .closeTime(request.closeTime())
+                    .features(request.features() != null ? new HashSet<>(request.features()) : new HashSet<>())
+                    .build();
+        });
+
+        lenient().doAnswer(invocation -> {
+            StadiumRequestForUpdate request = invocation.getArgument(0);
+            Stadium stadium = invocation.getArgument(1);
+            if (request.name() != null && !request.name().isEmpty()) {
+                stadium.setName(request.name());
+            }
+            if (request.photoUrl() != null && !request.photoUrl().isEmpty()) {
+                stadium.setPhotoUrl(request.photoUrl());
+            }
+            if (request.pricePerHour() != null && request.pricePerHour() >= 0) {
+                stadium.setPricePerHour(request.pricePerHour());
+            }
+            if (request.ballRentalFee() != null && request.ballRentalFee() >= 0) {
+                stadium.setBallRentalFee(request.ballRentalFee());
+            }
+            if (request.openTime() != null) {
+                stadium.setOpenTime(request.openTime());
+            }
+            if (request.closeTime() != null) {
+                stadium.setCloseTime(request.closeTime());
+            }
+            if (request.features() != null) {
+                stadium.getFeatures().clear();
+                stadium.getFeatures().addAll(request.features());
+            }
+            if (request.type() != null) {
+                stadium.setType(request.type());
+            }
+            return null;
+        }).when(stadiumMapper).updateStadiumFromRequest(any(StadiumRequestForUpdate.class), any(Stadium.class), any(StadiumUpdateContext.class));
     }
 
     @Test
@@ -270,8 +335,8 @@ class StadiumServiceTest {
     @Test
     void updateStadium() {
         StadiumRequestForUpdate newRequest = new StadiumRequestForUpdate(
-                "New Test Name", 1500.0, 100, LocalTime.of(12, 0)
-                , LocalTime.of(23, 59), Set.of("WiFi"), "new_photo_url.com"
+                "New Test Name", 1500.0, 100, LocalTime.of(12, 0),
+                LocalTime.of(23, 59), Set.of("WiFi"), Type.ELEVEN_A_SIDE, "new_photo_url.com"
         );
         setUpStadiumMocks();
 
@@ -293,7 +358,7 @@ class StadiumServiceTest {
     void updateStadium_updateStadium_ShouldThrowNotFound_WhenStadiumDoesNotExist() {
         StadiumRequestForUpdate request = new StadiumRequestForUpdate(
                 "Hacker Attempt", 99.0, 9,
-                null, null, Set.of("WiFi"), "hacked_url"
+                null, null, Set.of("WiFi"), Type.ELEVEN_A_SIDE, "hacked_url"
         );
         assertThatThrownBy(() -> stadiumService.updateStadium(sharedStadiumId, request))
                 .isInstanceOf(ResourceNotFoundException.class)
@@ -303,7 +368,7 @@ class StadiumServiceTest {
     @Test
     void updateStadium_ShouldKeepOldData_WhenNewValuesAreNullOrInvalid() {
         StadiumRequestForUpdate invalidRequest = new StadiumRequestForUpdate(
-                null, -50.0, -10, null, null, null, ""
+                null, -50.0, -10, null, null, null, null, ""
         );
         setUpStadiumMocks();
 
@@ -328,7 +393,7 @@ class StadiumServiceTest {
     @Test
     void updateStadium_ShouldKeepOldData_WhenValuesAreNullOrEmpty() {
         StadiumRequestForUpdate request = new StadiumRequestForUpdate(
-                "", null, null, null, null, null, null
+                "", null, null, null, null, null, null, null
         );
         setUpStadiumMocks();
 

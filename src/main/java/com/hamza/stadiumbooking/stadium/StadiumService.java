@@ -26,10 +26,11 @@ public class StadiumService {
     private final StadiumRepository stadiumRepository;
     private final UserRepository userRepository;
     private final OwnershipValidationService ownershipValidationService;
+    private final StadiumMapper stadiumMapper;
 
     public Page<StadiumResponse> getAllStadiums(Pageable pageable) {
         log.info("Action: getAllStadiums | Fetching stadiums from database");
-        return stadiumRepository.findAllByIsDeletedFalse(pageable).map(this::mapToDto);
+        return stadiumRepository.findAllByIsDeletedFalse(pageable).map(stadiumMapper::toResponse);
     }
 
     @Cacheable(value = "locations")
@@ -46,7 +47,7 @@ public class StadiumService {
                     return new ResourceNotFoundException("Stadium not found with ID: " + id);
                 });
         log.info("Action: getStadiumById | Successfully retrieved stadium: {}", id);
-        return mapToDto(stadium);
+        return stadiumMapper.toResponse(stadium);
     }
 
     public Stadium findStadiumEntityById(UUID id) {
@@ -60,7 +61,7 @@ public class StadiumService {
     public StadiumResponse addStadium(StadiumRequest request) {
         log.info("Action: addStadium | Attempting to add new stadium: {}", request.name());
 
-        Stadium stadium = mapToEntity(request);
+        Stadium stadium = stadiumMapper.toEntity(request);
 
         UUID managerId = Objects.requireNonNull(ownershipValidationService.getCurrentUserId(),
                 "Action: addStadium | Security Failure | User must be authenticated to add a stadium");
@@ -76,7 +77,7 @@ public class StadiumService {
         Stadium savedStadium = stadiumRepository.save(stadium);
 
         log.info("Action: addStadium | Success | Stadium created with ID: {}", savedStadium.getId());
-        return mapToDto(savedStadium);
+        return stadiumMapper.toResponse(savedStadium);
     }
 
     @Transactional
@@ -111,53 +112,11 @@ public class StadiumService {
                 }
         );
 
-        if (request.name() != null && !request.name().isEmpty()) stadium.setName(request.name());
-        if (request.photoUrl() != null && !request.photoUrl().isEmpty()) stadium.setPhotoUrl(request.photoUrl());
-        if (request.pricePerHour() != null && request.pricePerHour() >= 0) stadium.setPricePerHour(request.pricePerHour());
-        if (request.ballRentalFee() != null && request.ballRentalFee() >= 0) stadium.setBallRentalFee(request.ballRentalFee());
-
-        if (request.openTime() != null) stadium.setOpenTime(request.openTime());
-        if (request.closeTime() != null) stadium.setCloseTime(request.closeTime());
-
-        if (request.features() != null) {
-            stadium.getFeatures().clear();
-            stadium.getFeatures().addAll(request.features());
-        }
+        StadiumUpdateContext stadiumUpdateContext = new StadiumUpdateContext(request.features() != null ? new HashSet<>(request.features()) : null);
+        stadiumMapper.updateStadiumFromRequest(request, stadium, stadiumUpdateContext);
 
         Stadium savedStadium = stadiumRepository.save(stadium);
         log.info("Action: updateStadium | Success | Stadium ID: {} updated successfully", savedStadium.getId());
-        return mapToDto(savedStadium);
-    }
-
-
-    private StadiumResponse mapToDto(Stadium stadium) {
-        return new StadiumResponse(
-                stadium.getId(),
-                stadium.getName(),
-                stadium.getLocation(),
-                stadium.getPricePerHour(),
-                stadium.getBallRentalFee(),
-                stadium.getOpenTime(),
-                stadium.getCloseTime(),
-                new java.util.HashSet<>(stadium.getFeatures()),
-                stadium.getType(),
-                stadium.getPhotoUrl(),
-                stadium.getOwner().getId()
-        );
-    }
-
-    private Stadium mapToEntity(StadiumRequest request) {
-        return Stadium.builder()
-                .name(request.name())
-                .location(request.location())
-                .photoUrl(request.photoUrl())
-                .pricePerHour(request.pricePerHour())
-                .ballRentalFee(request.ballRentalFee() != null ? request.ballRentalFee() : 0)
-                .type(request.type())
-                .openTime(request.openTime())
-                .closeTime(request.closeTime())
-                .features(request.features() != null ? request.features() : new HashSet<>())
-                .isDeleted(false)
-                .build();
+        return stadiumMapper.toResponse(savedStadium);
     }
 }
