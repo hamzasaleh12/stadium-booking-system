@@ -326,11 +326,16 @@ public class BookingAuthorizationIT extends AbstractIntegrationTest {
             String requestJson = objectMapper.writeValueAsString(request);
 
             try (var executor = java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor()) {
-                tokens.forEach(token -> {
+                java.util.stream.IntStream.range(0, tokens.size()).forEach(index -> {
+                    String token = tokens.get(index);
                     executor.submit(() -> {
                         try {
                             latch.await();
                             var result = mockMvc.perform(post(BASE_URL)
+                                    .with(servletRequest -> {
+                                        servletRequest.setRemoteAddr("198.51.100." + (100 + index));
+                                        return servletRequest;
+                                    })
                                     .header("Authorization", "Bearer " + token)
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(requestJson)).andReturn();

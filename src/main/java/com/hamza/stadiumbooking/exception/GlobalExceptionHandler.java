@@ -68,6 +68,19 @@ public class GlobalExceptionHandler {
         return error(e.getMessage(), HttpStatus.CONFLICT);
     }
 
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<Object> handleRateLimitExceeded(RateLimitExceededException e) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", Long.toString(e.getRetryAfterSeconds()))
+                .body(new ApiError("Too many requests. Please try again later.",
+                        HttpStatus.TOO_MANY_REQUESTS, ZonedDateTime.now()));
+    }
+
+    @ExceptionHandler(IpBannedException.class)
+    public ResponseEntity<Object> handleIpBanned(IpBannedException e) {
+        return error(e.getMessage(), HttpStatus.FORBIDDEN);
+    }
+
     @ExceptionHandler({JWTVerificationException.class, TokenExpiredException.class})
     public ResponseEntity<Object> handleJwtErrors(Exception e) {
         log.warn("JWT auth failed {}", e.getMessage());
