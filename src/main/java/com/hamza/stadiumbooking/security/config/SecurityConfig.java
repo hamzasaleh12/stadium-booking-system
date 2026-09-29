@@ -4,6 +4,8 @@ import com.hamza.stadiumbooking.security.handler.DelegatedAccessDeniedHandler;
 import com.hamza.stadiumbooking.security.handler.DelegatedAuthenticationEntryPoint;
 import com.hamza.stadiumbooking.security.jwt.JwtAuthorizationFilter;
 import com.hamza.stadiumbooking.security.jwt.JwtProvider;
+import com.hamza.stadiumbooking.security.ratelimit.RateLimiterService;
+import com.hamza.stadiumbooking.security.ratelimit.RateLimitingFilter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,15 +38,18 @@ public class SecurityConfig {
     private final HandlerExceptionResolver exceptionResolver;
     private final DelegatedAuthenticationEntryPoint authEntryPoint;
     private final DelegatedAccessDeniedHandler accessDeniedHandler;
+    private final RateLimiterService rateLimiterService;
 
     public SecurityConfig(JwtProvider utils,
                           @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver
-            , DelegatedAuthenticationEntryPoint authEntryPoint, DelegatedAccessDeniedHandler accessDeniedHandler) {
+                          , DelegatedAuthenticationEntryPoint authEntryPoint, DelegatedAccessDeniedHandler accessDeniedHandler,
+                                        RateLimiterService rateLimiterService) {
 
         this.utils = utils;
         this.exceptionResolver = exceptionResolver;
         this.authEntryPoint = authEntryPoint;
         this.accessDeniedHandler = accessDeniedHandler;
+        this.rateLimiterService = rateLimiterService;
     }
 
     @Bean
@@ -107,6 +112,7 @@ public class SecurityConfig {
         );
 
         http.addFilterBefore(new JwtAuthorizationFilter(utils, exceptionResolver), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(new RateLimitingFilter(rateLimiterService, exceptionResolver), JwtAuthorizationFilter.class);
         return http.build();
     }
 }
