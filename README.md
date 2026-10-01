@@ -129,6 +129,9 @@ Your compose + Spring profiles expect:
 | `DB_NAME` | MySQL database name |
 | `MYSQL_ROOT_PASSWORD` | MySQL root password |
 | `REDIS_PASSWORD` | Redis auth |
+| `SPRING_DATA_REDIS_HOST` | Production Redis host |
+| `SPRING_DATA_REDIS_PORT` | Production Redis port |
+| `SPRING_DATA_REDIS_PASSWORD` | Production Redis password |
 | `JWT_SECRET` | JWT signing secret |
 | `JWT_ISSUER` | JWT issuer |
 
