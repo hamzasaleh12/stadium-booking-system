@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.interceptor.CacheErrorHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,7 +25,7 @@ import java.time.Duration;
 @Configuration
 @EnableCaching
 @RequiredArgsConstructor
-public class CacheConfig {
+public class CacheConfig implements CachingConfigurer {
 
     private final ObjectMapper springManagedObjectMapper;
 
@@ -65,23 +66,32 @@ public class CacheConfig {
         return new CacheErrorHandler() {
             @Override
             public void handleCacheGetError(@NonNull RuntimeException e, org.springframework.cache.@NonNull Cache cache, @NonNull Object key) {
-                log.warn("Cache GET error on {}:{} -> {}", cache.getName(), key, e.getMessage());
+                log.warn("CACHE_REDIS_GET_FAILED cache={} key={} action=continue_without_cache",
+                        cache.getName(), key, e);
             }
 
             @Override
             public void handleCachePutError(@NonNull RuntimeException e, org.springframework.cache.@NonNull Cache cache, @NonNull Object key, Object value) {
-                log.warn("Cache PUT error on {}:{} -> {}", cache.getName(), key, e.getMessage());
+                log.warn("CACHE_REDIS_PUT_FAILED cache={} key={} action=continue_without_cache",
+                        cache.getName(), key, e);
             }
 
             @Override
             public void handleCacheEvictError(@NonNull RuntimeException e, org.springframework.cache.@NonNull Cache cache, @NonNull Object key) {
-                log.warn("Cache EVICT error on {}:{} -> {}", cache.getName(), key, e.getMessage());
+                log.warn("CACHE_REDIS_EVICT_FAILED cache={} key={} action=continue_without_cache",
+                        cache.getName(), key, e);
             }
 
             @Override
             public void handleCacheClearError(@NonNull RuntimeException e, org.springframework.cache.@NonNull Cache cache) {
-                log.warn("Cache CLEAR error on {} -> {}", cache.getName(), e.getMessage());
+                log.warn("CACHE_REDIS_CLEAR_FAILED cache={} action=continue_without_cache",
+                        cache.getName(), e);
             }
         };
+    }
+
+    @Override
+    public CacheErrorHandler errorHandler() {
+        return cacheErrorHandler();
     }
 }
