@@ -2,6 +2,9 @@ package com.hamza.stadiumbooking.security.ratelimit;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
@@ -27,20 +30,43 @@ public class RateLimiterService {
 
     private final StringRedisTemplate redisTemplate;
 
+    @EventListener(ApplicationReadyEvent.class)
+    public void logRedisConnectivity() {
+        try {
+            String response = redisTemplate.execute((RedisCallback<String>) connection -> connection.ping());
+            log.info("RATE_LIMIT_REDIS_CONNECTED status=success response={}", response);
+        } catch (RuntimeException exception) {
+            log.error("RATE_LIMIT_REDIS_CONNECTED status=failed mode=fail-open error={}",
+                    exception.getMessage(), exception);
+        }
+    }
+
     public boolean isBanned(String ip) {
         try {
-            return redisTemplate.hasKey(banKey(ip));
+            boolean banned = Boolean.TRUE.equals(redisTemplate.hasKey(banKey(ip)));
+            if (banned) {
+                log.warn("RATE_LIMIT_BAN_CHECK result=banned ip={}", ip);
+            }
+            return banned;
         } catch (RuntimeException exception) {
-            log.warn("Redis ban lookup failed; allowing request: {}", exception.getMessage());
+            log.error("Redis ban lookup failed; rate limiting is degraded and the request is being allowed: {}",
+                    exception.getMessage(), exception);
             return false;
         }
     }
 
     public void banIp(String ip, Duration duration) {
         try {
-            redisTemplate.opsForValue().setIfAbsent(banKey(ip), "1", duration);
+            Boolean created = redisTemplate.opsForValue().setIfAbsent(banKey(ip), "1", duration);
+            if (Boolean.TRUE.equals(created)) {
+                log.warn("RATE_LIMIT_IP_BANNED ip={} durationSeconds={}", ip, duration.toSeconds());
+            } else {
+                log.warn("RATE_LIMIT_IP_BAN_ALREADY_PRESENT ip={} durationSeconds={}",
+                        ip, duration.toSeconds());
+            }
         } catch (RuntimeException exception) {
-            log.warn("Redis ban write failed; allowing request: {}", exception.getMessage());
+            log.error("Redis ban write failed; rate limiting is degraded: {}",
+                    exception.getMessage(), exception);
         }
     }
 
@@ -55,9 +81,13 @@ public class RateLimiterService {
             long currentCount = count == null ? 0L : count;
             Long ttl = redisTemplate.getExpire(redisKey);
             long retryAfter = ttl == null || ttl < 1 ? window.toSeconds() : ttl;
-            return new RateLimitResult(currentCount, retryAfter, currentCount > banThreshold);
+            boolean banThresholdExceeded = currentCount > banThreshold;
+            log.info("RATE_LIMIT_CHECK key={} count={} maxAllowed={} banThreshold={} retryAfterSeconds={} banThresholdExceeded={}",
+                    key, currentCount, maxAllowed, banThreshold, retryAfter, banThresholdExceeded);
+            return new RateLimitResult(currentCount, retryAfter, banThresholdExceeded);
         } catch (RuntimeException exception) {
-            log.warn("Redis rate-limit check failed; allowing request: {}", exception.getMessage());
+            log.error("Redis rate-limit check failed; rate limiting is degraded and the request is being allowed: {}",
+                    exception.getMessage(), exception);
             return new RateLimitResult(0, window.toSeconds(), false);
         }
     }

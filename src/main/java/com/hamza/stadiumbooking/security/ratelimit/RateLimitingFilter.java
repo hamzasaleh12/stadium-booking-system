@@ -7,6 +7,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
@@ -15,6 +16,7 @@ import java.io.IOException;
 import java.time.Duration;
 
 @RequiredArgsConstructor
+@Slf4j
 public class RateLimitingFilter extends OncePerRequestFilter {
     private static final Duration WINDOW = Duration.ofMinutes(1);
     private static final Duration BAN_DURATION = Duration.ofHours(2);
@@ -27,6 +29,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            log.debug("RATE_LIMIT_BYPASS method=OPTIONS path={}", request.getRequestURI());
             filterChain.doFilter(request, response);
             return;
         }
@@ -48,16 +51,23 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             enforceResult(result, clientIp, tier);
             filterChain.doFilter(request, response);
         } catch (RateLimitExceededException | IpBannedException exception) {
+            log.warn("RATE_LIMIT_BLOCKED ip={} path={} tier={} responseStatus={}",
+                    clientIp, request.getRequestURI(), classify(resolvePath(request)),
+                    exception instanceof IpBannedException ? 403 : 429);
             exceptionResolver.resolveException(request, response, null, exception);
         }
     }
 
     private void enforceResult(RateLimitResult result, String clientIp, RateLimitTier tier) {
         if (result.banThresholdExceeded()) {
+            log.warn("RATE_LIMIT_THRESHOLD_EXCEEDED ip={} tier={} count={} action=ban",
+                    clientIp, tier.name(), result.count());
             rateLimiterService.banIp(clientIp, BAN_DURATION);
             throw new IpBannedException();
         }
         if (result.count() > tier.maxAllowed()) {
+            log.warn("RATE_LIMIT_SOFT_LIMIT_EXCEEDED ip={} tier={} count={} maxAllowed={} retryAfterSeconds={}",
+                    clientIp, tier.name(), result.count(), tier.maxAllowed(), result.retryAfterSeconds());
             throw new RateLimitExceededException(result.retryAfterSeconds());
         }
     }
