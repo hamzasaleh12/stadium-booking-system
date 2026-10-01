@@ -60,6 +60,7 @@ jobs:
           cache-to: type=gha,mode=max
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/stadium-app:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/stadium-app:latest
 
       - name: Update Hugging Face Metadata
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

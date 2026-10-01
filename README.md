@@ -132,6 +132,8 @@ Your compose + Spring profiles expect:
 | `SPRING_DATA_REDIS_HOST` | Production Redis host |
 | `SPRING_DATA_REDIS_PORT` | Production Redis port |
 | `SPRING_DATA_REDIS_PASSWORD` | Production Redis password |
+| `SPRING_DATA_REDIS_USERNAME` | Redis username, usually `default` for Upstash |
+| `SPRING_DATA_REDIS_SSL_ENABLED` | Enable TLS for managed Redis, such as Upstash |
 | `JWT_SECRET` | JWT signing secret |
 | `JWT_ISSUER` | JWT issuer |
 
