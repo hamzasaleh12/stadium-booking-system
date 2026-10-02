@@ -11,9 +11,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.http.ResponseCookie;
 
 import java.util.List;
 import java.util.UUID;
+import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -24,7 +26,7 @@ class JwtProviderTest {
 
     @BeforeEach
     void setUp() {
-        jwtProvider = new JwtProvider(secret, issuer);
+        jwtProvider = new JwtProvider(secret, issuer, Duration.ofDays(7), true, "Lax");
     }
 
     @Test
@@ -67,30 +69,79 @@ class JwtProviderTest {
     @DisplayName("Refresh Token should be valid and have no roles")
     void createRefreshToken_HappyPath_ShouldSucceed() {
         String username = "hamza@gmail.com";
-        String token = jwtProvider.createRefreshToken(username);
+        UUID userId = UUID.randomUUID();
+        String token = jwtProvider.createRefreshToken(username, userId);
         DecodedJWT decoded = getVerifier().verify(token);
 
         assertThat(decoded.getSubject()).isEqualTo(username);
         assertThat(decoded.getClaim("roles").isMissing()).isTrue();
+        assertThat(decoded.getClaim("type").asString()).isEqualTo("REFRESH");
+        assertThat(decoded.getClaim("id").asString()).isEqualTo(userId.toString());
+        assertThat(decoded.getId()).isNotBlank();
     }
 
     @Test
-    @DisplayName("Refresh Token should expire after 30 days")
-    void createRefreshToken_Expiration_ShouldBeThirtyDays() {
-        String token = jwtProvider.createRefreshToken("user");
+    @DisplayName("Refresh Token should expire after 7 days")
+    void createRefreshToken_Expiration_ShouldBeSevenDays() {
+        String token = jwtProvider.createRefreshToken("user", UUID.randomUUID());
         DecodedJWT decoded = getVerifier().verify(token);
 
-        long expectedExp = System.currentTimeMillis() + (30L * 24 * 60 * 60 * 1000);
+        long expectedExp = System.currentTimeMillis() + (7L * 24 * 60 * 60 * 1000);
         assertThat(decoded.getExpiresAt().getTime()).isCloseTo(expectedExp, within(10000L));
     }
 
     @Test
     @DisplayName("Should throw exception if trying to use REFRESH token as ACCESS token")
     void decodedJWT_WrongTokenType_ShouldThrowException() {
-        String refreshToken = jwtProvider.createRefreshToken("hamza");
+        String refreshToken = jwtProvider.createRefreshToken("hamza", UUID.randomUUID());
 
         assertThatThrownBy(() -> jwtProvider.decodedJWT(refreshToken, "ACCESS"))
                 .isInstanceOf(JWTVerificationException.class);
+    }
+
+    @Test
+    void getUserId_ShouldReturnUserIdFromRefreshToken() {
+        UUID userId = UUID.randomUUID();
+        DecodedJWT decoded = getVerifier().verify(jwtProvider.createRefreshToken("user", userId));
+
+        assertThat(jwtProvider.getUserId(decoded)).isEqualTo(userId);
+    }
+
+    @Test
+    void getUserId_ShouldRejectMissingOrMalformedClaim() {
+        DecodedJWT decoded = JWT.decode(JWT.create()
+                .withSubject("user")
+                .withClaim("type", "REFRESH")
+                .withIssuer(issuer)
+                .sign(Algorithm.HMAC256(secret)));
+
+        assertThatThrownBy(() -> jwtProvider.getUserId(decoded))
+                .isInstanceOf(JWTVerificationException.class)
+                .hasMessage("Invalid refresh token");
+    }
+
+    @Test
+    void createRefreshTokenCookie_ShouldSetSecureRefreshCookieAttributes() {
+        ResponseCookie cookie = jwtProvider.createRefreshTokenCookie("refresh-value");
+
+        assertThat(cookie.getValue()).isEqualTo("refresh-value");
+        assertThat(cookie.isHttpOnly()).isTrue();
+        assertThat(cookie.isSecure()).isTrue();
+        assertThat(cookie.getPath()).isEqualTo("/");
+        assertThat(cookie.getSameSite()).isEqualTo("Lax");
+        assertThat(cookie.getMaxAge()).isEqualTo(Duration.ofDays(7));
+    }
+
+    @Test
+    void clearRefreshTokenCookie_ShouldExpireRefreshCookie() {
+        ResponseCookie cookie = jwtProvider.clearRefreshTokenCookie();
+
+        assertThat(cookie.getValue()).isEmpty();
+        assertThat(cookie.isHttpOnly()).isTrue();
+        assertThat(cookie.isSecure()).isTrue();
+        assertThat(cookie.getPath()).isEqualTo("/");
+        assertThat(cookie.getSameSite()).isEqualTo("Lax");
+        assertThat(cookie.getMaxAge()).isEqualTo(Duration.ZERO);
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.hamza.stadiumbooking.user;
 import com.hamza.stadiumbooking.exception.EmailTakenException;
 import com.hamza.stadiumbooking.exception.PhoneNumberTakenException;
 import com.hamza.stadiumbooking.exception.ResourceNotFoundException;
+import com.hamza.stadiumbooking.security.auth.RefreshTokenStore;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,7 @@ public class UserService{
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
+    private final RefreshTokenStore refreshTokenStore;
 
     public Page<UserResponse> getAllUsers(Pageable pageable) {
         log.info("Action: getAllUsers | Fetching users from DB (Page: {})", pageable.getPageNumber());
@@ -90,6 +92,7 @@ public class UserService{
         user.setPhoneNumber("del" + suffix + "_" + user.getPhoneNumber());
 
         userRepository.save(user);
+        refreshTokenStore.delete(userId);
         log.info("Action: deleteUser | Success | User ID {} marked as deleted", userId);
     }
 
@@ -106,7 +109,11 @@ public class UserService{
             user.setPassword(passwordEncoder.encode(request.password()));
         }
 
-        if (request.email() != null && !request.email().isEmpty() && !request.email().equals(user.getEmail())) {
+        boolean emailChanged = request.email() != null
+                && !request.email().isEmpty() && !request.email().isBlank()
+                && !request.email().equals(user.getEmail());
+
+        if (emailChanged) {
             if (userRepository.findByEmailAndIsDeletedFalse(request.email()).isPresent()) {
                 log.warn("Action: updateUser | Conflict | Email {} is already taken", request.email());
                 throw new EmailTakenException("Email " + request.email() + " is already taken.");
@@ -131,6 +138,10 @@ public class UserService{
         userMapper.updateUserFromRequest(request, user);
 
         User savedUser = userRepository.save(user);
+        if (emailChanged) {
+            refreshTokenStore.delete(userId);
+            log.info("Action: updateUser | Refresh session revoked after email change | User ID: {}", userId);
+        }
         log.info("Action: updateUser | Success | User ID {} updated successfully", savedUser.getId());
         return userMapper.toResponse(savedUser);
     }
@@ -143,14 +154,21 @@ public class UserService{
                     return new ResourceNotFoundException("User not found with ID: " + userId);
                 });
 
+        Role newRole;
         try {
-            user.setRole(Role.valueOf(newRoleAsString.trim().toUpperCase()));
+            newRole = Role.valueOf(newRoleAsString.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
             log.error("Action: changeUserRole | Failure | Invalid Role: {}", newRoleAsString);
             throw new IllegalArgumentException("Invalid Role: " + newRoleAsString);
         }
 
+        boolean roleChanged = user.getRole() != newRole;
+        user.setRole(newRole);
         User savedUser = userRepository.save(user);
+        if (roleChanged) {
+            refreshTokenStore.delete(userId);
+            log.info("Action: changeUserRole | Refresh session revoked | User ID: {}", userId);
+        }
         log.info("Action: changeUserRole | Success | User ID: {} role updated to {}", userId, savedUser.getRole());
         return userMapper.toResponse(savedUser);
     }

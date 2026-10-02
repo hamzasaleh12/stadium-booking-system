@@ -6,6 +6,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.hamza.stadiumbooking.security.service.CustomUserDetails;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
@@ -14,17 +15,28 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.*;
 
 @Component @Slf4j
 public class JwtProvider {
     private final String secretKey;
     private final String issuer;
+    @Getter
+    private final Duration refreshTokenTtl;
+    private final boolean refreshCookieSecure;
+    private final String refreshCookieSameSite;
 
     public JwtProvider(@Value("${jwt.secret}") String secretKey,
-                       @Value("${jwt.issuer}") String issuer) {
+                       @Value("${jwt.issuer}") String issuer,
+                       @Value("${jwt.refresh-token-ttl:7d}") Duration refreshTokenTtl,
+                       @Value("${jwt.refresh-cookie-secure:true}") boolean refreshCookieSecure,
+                       @Value("${jwt.refresh-cookie-same-site:Lax}") String refreshCookieSameSite) {
         this.secretKey = secretKey;
         this.issuer = issuer;
+        this.refreshTokenTtl = refreshTokenTtl;
+        this.refreshCookieSecure = refreshCookieSecure;
+        this.refreshCookieSameSite = refreshCookieSameSite;
     }
 
     private Algorithm getAlgorithm() {
@@ -43,11 +55,13 @@ public class JwtProvider {
                 .sign(getAlgorithm());
     }
 
-    public String createRefreshToken(String username) {
+    public String createRefreshToken(String username, UUID userId) {
         return JWT.create()
                 .withSubject(username)
                 .withClaim("type", "REFRESH")
-                .withExpiresAt(new Date(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000))
+                .withClaim("id", userId.toString())
+                .withJWTId(UUID.randomUUID().toString())
+                .withExpiresAt(new Date(System.currentTimeMillis() + refreshTokenTtl.toMillis()))
                 .withIssuer(issuer)
                 .sign(getAlgorithm());
     }
@@ -87,10 +101,33 @@ public class JwtProvider {
     public ResponseCookie createRefreshTokenCookie(String refreshToken) {
         return ResponseCookie.from("refresh_token", refreshToken)
                 .httpOnly(true)
-                .secure(false)
+                .secure(refreshCookieSecure)
                 .path("/")
-                .maxAge(30L * 24 * 60 * 60)
-                .sameSite("Lax")
+                .maxAge(refreshTokenTtl)
+                .sameSite(refreshCookieSameSite)
                 .build();
     }
+
+    public ResponseCookie clearRefreshTokenCookie() {
+        return ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(refreshCookieSecure)
+                .path("/")
+                .maxAge(Duration.ZERO)
+                .sameSite(refreshCookieSameSite)
+                .build();
+    }
+
+    public UUID getUserId(DecodedJWT token) {
+        try {
+            String userId = token.getClaim("id").asString();
+            if (userId == null || userId.isBlank()) {
+                throw new IllegalArgumentException();
+            }
+            return UUID.fromString(userId);
+        } catch (IllegalArgumentException exception) {
+            throw new JWTVerificationException("Invalid refresh token");
+        }
+    }
+
 }
