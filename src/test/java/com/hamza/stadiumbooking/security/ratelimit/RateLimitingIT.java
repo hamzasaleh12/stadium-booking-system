@@ -103,9 +103,7 @@ class RateLimitingIT extends AbstractIntegrationTest {
                             .with(request -> {
                                 request.setRemoteAddr("198.51.100.15");
                                 return request;
-                            })
-                            .header("Origin", "https://example.test")
-                            .header("Access-Control-Request-Method", "POST"))
+                            }))
                     .andExpect(status().isOk());
         }
 
