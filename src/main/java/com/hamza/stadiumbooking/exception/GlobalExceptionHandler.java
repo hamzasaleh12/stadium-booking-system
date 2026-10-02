@@ -83,8 +83,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({JWTVerificationException.class, TokenExpiredException.class})
     public ResponseEntity<Object> handleJwtErrors(Exception e) {
-        log.warn("JWT auth failed {}", e.getMessage());
-        return error("Authentication failed: " + e.getMessage(), HttpStatus.UNAUTHORIZED);
+        log.warn("JWT authentication failed", e);
+        return error("Authentication failed", HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ResponseEntity<Object> handleInvalidRefreshToken() {
+        return error("Authentication failed", HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(MissingRequestCookieException.class)

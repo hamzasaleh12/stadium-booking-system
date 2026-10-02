@@ -3,6 +3,7 @@ package com.hamza.stadiumbooking.user;
 import com.hamza.stadiumbooking.exception.EmailTakenException;
 import com.hamza.stadiumbooking.exception.PhoneNumberTakenException;
 import com.hamza.stadiumbooking.exception.ResourceNotFoundException;
+import com.hamza.stadiumbooking.security.auth.RefreshTokenStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +33,8 @@ class UserServiceTest {
     private PasswordEncoder passwordEncoder;
     @Mock
     private UserMapper userMapper;
+    @Mock
+    private RefreshTokenStore refreshTokenStore;
 
     // --- Shared Test Data ---
     private final UUID sharedUserId = UUID.randomUUID();
@@ -227,6 +230,7 @@ class UserServiceTest {
 
         verify(userRepository, times(1)).findByIdAndIsDeletedFalse(sharedUserId);
         verify(userRepository,times(1)).save(sharedUserCopy);
+        verify(refreshTokenStore).delete(sharedUserId);
         assertThat(sharedUserCopy.isDeleted()).isEqualTo(true);
         assertThat(sharedUserCopy.getEmail())
                 .startsWith("deleted_")
@@ -266,6 +270,7 @@ class UserServiceTest {
         assertThat(sharedUserCopy.getDob()).isEqualTo(request.dob());
 
         verify(userRepository).save(sharedUserCopy);
+        verify(refreshTokenStore).delete(sharedUserId);
     }
     @Test
     void updateUser_ShouldThrowResourceNotFoundException() {
@@ -396,6 +401,7 @@ class UserServiceTest {
 
         assertThat(sharedUserCopy.getRole()).isEqualTo(Role.ROLE_MANAGER);
         verify(userRepository).save(sharedUserCopy);
+        verify(refreshTokenStore).delete(sharedUserId);
     }
     @Test
     void changeUserRole_ShouldNotFound(){

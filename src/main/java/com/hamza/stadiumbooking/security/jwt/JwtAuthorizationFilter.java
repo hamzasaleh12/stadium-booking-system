@@ -27,6 +27,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader(AUTHORIZATION);
 
         if (path.equals("/api/v1/auth/login") || path.equals("/api/v1/auth/refresh-token") ||
+                path.equals("/api/v1/auth/logout") ||
                 authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;

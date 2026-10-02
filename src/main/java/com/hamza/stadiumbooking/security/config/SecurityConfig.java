@@ -52,10 +52,11 @@ public class SecurityConfig {
         this.rateLimiterService = rateLimiterService;
     }
 
+    // TODO(security): Before connecting a frontend, configure trusted CORS origins and enable CSRF protection for cookie-based requests.
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("*"));
+        configuration.setAllowedOrigins(List.of());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
 
@@ -89,7 +90,8 @@ public class SecurityConfig {
                         "/swagger-ui/**",
                         "/swagger-ui.html"
                 ).permitAll()
-                .requestMatchers("/api/v1/auth/login/**", "/api/v1/auth/refresh-token/**").permitAll()
+                .requestMatchers("/api/v1/auth/login/**", "/api/v1/auth/refresh-token/**",
+                        "/api/v1/auth/logout/**").permitAll()
                 .requestMatchers("/", "/actuator/health").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/stadiums/**").permitAll()

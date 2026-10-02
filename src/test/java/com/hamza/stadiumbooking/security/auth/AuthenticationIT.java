@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -33,9 +34,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         @Autowired
         private PasswordEncoder passwordEncoder;
 
+        @Autowired
+        private StringRedisTemplate redisTemplate;
+
         private static final String API_V1_USERS = "/api/v1/users";
         private static final String API_V1_LOGIN = "/api/v1/auth/login";
         private static final String API_V1_REFRESH_TOKEN = "/api/v1/auth/refresh-token";
+        private static final String API_V1_LOGOUT = "/api/v1/auth/logout";
 
         @Test
         @DisplayName("Should register a new user successfully")
@@ -67,6 +72,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                     .andExpect(jsonPath("$.access_token").exists())
                     .andExpect(cookie().exists("refresh_token"))
                     .andExpect(cookie().httpOnly("refresh_token", true));
+        }
+
+        @Test
+        @DisplayName("Should create one hashed Redis refresh session on login")
+        void login_ShouldPersistHashedRefreshSession() throws Exception {
+            User user = authUtils.savePlayer("redis-login@gmail.com", "Password@123", "01111111111");
+            jakarta.servlet.http.Cookie cookie = authUtils.obtainRefreshToken("redis-login@gmail.com", "Password@123");
+
+            String redisValue = redisTemplate.opsForValue().get("auth/v1:" + user.getId());
+
+            assertThat(redisValue).hasSize(64).doesNotContain(cookie.getValue());
+            assertThat(redisTemplate.getExpire("auth/v1:" + user.getId()))
+                    .isBetween(604790L, 604800L);
         }
 
         @Test
@@ -196,15 +214,46 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
             mockMvc.perform(post(API_V1_REFRESH_TOKEN)
                     .cookie(validRefreshToken)
             ).andExpect(status().isOk())
-                    .andExpect(jsonPath("$.access_token").exists());
+                    .andExpect(jsonPath("$.access_token").exists())
+                    .andExpect(cookie().exists("refresh_token"))
+                    .andExpect(cookie().value("refresh_token", org.hamcrest.Matchers.not(validRefreshToken.getValue())));
         }
 
         @Test
-        @DisplayName("Should return 400 when user dose not have refresh token in cookie")
+        @DisplayName("Should reject replay of the previous refresh token")
+        void refreshToken_ShouldRejectReplayedToken() throws Exception {
+            authUtils.savePlayer("replay@gmail.com", "Password@123", "01111111111");
+            jakarta.servlet.http.Cookie original = authUtils.obtainRefreshToken("replay@gmail.com", "Password@123");
+
+            mockMvc.perform(post(API_V1_REFRESH_TOKEN).cookie(original))
+                    .andExpect(status().isOk());
+
+            mockMvc.perform(post(API_V1_REFRESH_TOKEN).cookie(original))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        @DisplayName("Should return 401 when user does not have refresh token in cookie")
         void refreshToken_ShouldThrowException_whenThereIsNoRefreshTokenInCookie() throws Exception {
-            authUtils.savePlayer("refresh@gmail.com", "Password@123", "01111111111");
             mockMvc.perform(post(API_V1_REFRESH_TOKEN)
-                    ).andExpect(status().isBadRequest());
+                    ).andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        @DisplayName("Should delete the Redis session and expire the refresh cookie on logout")
+        void logout_ShouldDeleteSessionAndClearCookie() throws Exception {
+            User user = authUtils.savePlayer("logout@gmail.com", "Password@123", "01111111111");
+            jakarta.servlet.http.Cookie refreshCookie =
+                    authUtils.obtainRefreshToken("logout@gmail.com", "Password@123");
+
+            mockMvc.perform(post(API_V1_LOGOUT).cookie(refreshCookie))
+                    .andExpect(status().isNoContent())
+                    .andExpect(cookie().maxAge("refresh_token", 0))
+                    .andExpect(cookie().value("refresh_token", ""));
+
+            assertThat(redisTemplate.hasKey("auth/v1:" + user.getId())).isFalse();
+            mockMvc.perform(post(API_V1_REFRESH_TOKEN).cookie(refreshCookie))
+                    .andExpect(status().isUnauthorized());
         }
 
         @Test
@@ -223,6 +272,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
             mockMvc.perform(get(API_V1_USERS + "/" + UUID.randomUUID())
                             .header("Authorization", "Bearer " + tokenWithoutId)
                     ).andExpect(status().isUnauthorized())
-                    .andExpect(jsonPath("$.msg").value("Authentication failed: Invalid Token"));
+                            .andExpect(jsonPath("$.msg").value("Authentication failed"));
         }
     }

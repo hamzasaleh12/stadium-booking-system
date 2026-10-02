@@ -1,7 +1,7 @@
 package com.hamza.stadiumbooking.security.auth;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.hamza.stadiumbooking.exception.ResourceNotFoundException;
+import com.hamza.stadiumbooking.exception.InvalidRefreshTokenException;
 import com.hamza.stadiumbooking.security.jwt.JwtProvider;
 import com.hamza.stadiumbooking.user.Role;
 import com.hamza.stadiumbooking.user.User;
@@ -34,6 +34,8 @@ class AuthenticationServiceTest {
     private DecodedJWT decodedJWT;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private RefreshTokenStore refreshTokenStore;
 
     @InjectMocks
     private AuthenticationService authenticationService;
@@ -55,25 +57,30 @@ class AuthenticationServiceTest {
     @DisplayName("Should successfully refresh token and return new access token")
     void refreshToken_HappyPath_ShouldSucceed() {
         given(jwtProvider.decodedJWT(refreshToken, "REFRESH")).willReturn(decodedJWT);
-        given(decodedJWT.getSubject()).willReturn(email);
-        given(userRepository.findByEmailAndIsDeletedFalse(email)).willReturn(Optional.of(user));
+        given(jwtProvider.getUserId(decodedJWT)).willReturn(user.getId());
+        given(userRepository.findByIdAndIsDeletedFalse(user.getId())).willReturn(Optional.of(user));
+        given(jwtProvider.createRefreshToken(email, user.getId())).willReturn("replacement_token");
+        given(jwtProvider.getRefreshTokenTtl()).willReturn(java.time.Duration.ofDays(7));
+        given(refreshTokenStore.rotate(
+                eq(user.getId()), eq(refreshToken), eq("replacement_token"), eq(java.time.Duration.ofDays(7))))
+                .willReturn(true);
         given(jwtProvider.createAccessToken(email, user.getId(),false, List.of(Role.ROLE_PLAYER.name()))).willReturn("new_access_token");
 
-        AuthenticationResponse response = authenticationService.refreshToken(refreshToken);
+        InternalAuthResult response = authenticationService.refreshToken(refreshToken);
 
         assertThat(response.accessToken()).isEqualTo("new_access_token");
+        assertThat(response.refreshToken()).isEqualTo("replacement_token");
         assertThat(response).isNotNull();
     }
 
     @Test
-    @DisplayName("Should throw ResourceNotFoundException when user in token does not exist")
+    @DisplayName("Should reject refresh when user in token does not exist")
     void refreshToken_UserNotFound_ShouldThrowException() {
         given(jwtProvider.decodedJWT(refreshToken, "REFRESH")).willReturn(decodedJWT);
-        given(decodedJWT.getSubject()).willReturn(email);
-        given(userRepository.findByEmailAndIsDeletedFalse(email)).willReturn(Optional.empty());
+        given(jwtProvider.getUserId(decodedJWT)).willReturn(user.getId());
+        given(userRepository.findByIdAndIsDeletedFalse(user.getId())).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> authenticationService.refreshToken(refreshToken))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("User not found");
+                .isInstanceOf(InvalidRefreshTokenException.class);
     }
 }
