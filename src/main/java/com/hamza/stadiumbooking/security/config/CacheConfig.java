@@ -67,25 +67,29 @@ public class CacheConfig implements CachingConfigurer {
             @Override
             public void handleCacheGetError(@NonNull RuntimeException e, org.springframework.cache.@NonNull Cache cache, @NonNull Object key) {
                 log.warn("CACHE_REDIS_GET_FAILED cache={} key={} action=continue_without_cache",
-                        cache.getName(), key, e);
+                        cache.getName(), key);
+                log.warn("CACHE_REDIS_GET_CAUSE cause={}", e.getMessage());
             }
 
             @Override
             public void handleCachePutError(@NonNull RuntimeException e, org.springframework.cache.@NonNull Cache cache, @NonNull Object key, Object value) {
                 log.warn("CACHE_REDIS_PUT_FAILED cache={} key={} action=continue_without_cache",
-                        cache.getName(), key, e);
+                        cache.getName(), key);
+                log.warn("CACHE_REDIS_PUT_CAUSE cause={}", e.getMessage());
             }
 
             @Override
             public void handleCacheEvictError(@NonNull RuntimeException e, org.springframework.cache.@NonNull Cache cache, @NonNull Object key) {
                 log.warn("CACHE_REDIS_EVICT_FAILED cache={} key={} action=continue_without_cache",
-                        cache.getName(), key, e);
+                        cache.getName(), key);
+                log.warn("CACHE_REDIS_EVICT_CAUSE cause={}", e.getMessage());
             }
 
             @Override
             public void handleCacheClearError(@NonNull RuntimeException e, org.springframework.cache.@NonNull Cache cache) {
                 log.warn("CACHE_REDIS_CLEAR_FAILED cache={} action=continue_without_cache",
-                        cache.getName(), e);
+                        cache.getName());
+                log.warn("CACHE_REDIS_CLEAR_CAUSE cause={}", e.getMessage());
             }
         };
     }

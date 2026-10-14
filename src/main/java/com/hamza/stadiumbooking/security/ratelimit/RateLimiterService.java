@@ -37,7 +37,7 @@ public class RateLimiterService {
             log.info("RATE_LIMIT_REDIS_CONNECTED status=success response={}", response);
         } catch (RuntimeException exception) {
             log.error("RATE_LIMIT_REDIS_CONNECTED status=failed mode=fail-open error={}",
-                    exception.getMessage(), exception);
+                    exception.getMessage());
         }
     }
 
@@ -50,7 +50,7 @@ public class RateLimiterService {
             return banned;
         } catch (RuntimeException exception) {
             log.error("Redis ban lookup failed; rate limiting is degraded and the request is being allowed: {}",
-                    exception.getMessage(), exception);
+                    exception.getMessage());
             return false;
         }
     }
@@ -66,7 +66,7 @@ public class RateLimiterService {
             }
         } catch (RuntimeException exception) {
             log.error("Redis ban write failed; rate limiting is degraded: {}",
-                    exception.getMessage(), exception);
+                    exception.getMessage());
         }
     }
 
@@ -87,7 +87,7 @@ public class RateLimiterService {
             return new RateLimitResult(currentCount, retryAfter, banThresholdExceeded);
         } catch (RuntimeException exception) {
             log.error("Redis rate-limit check failed; rate limiting is degraded and the request is being allowed: {}",
-                    exception.getMessage(), exception);
+                    exception.getMessage());
             return new RateLimitResult(0, window.toSeconds(), false);
         }
     }

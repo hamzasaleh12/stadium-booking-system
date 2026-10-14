@@ -1,5 +1,7 @@
 package com.hamza.stadiumbooking.booking;
 
+import com.hamza.stadiumbooking.booking.dto.*;
+
 import com.hamza.stadiumbooking.exception.ConflictingBookingsException;
 import com.hamza.stadiumbooking.exception.ResourceNotFoundException;
 import com.hamza.stadiumbooking.stadium.Stadium;
@@ -94,6 +96,10 @@ public class BookingService {
             throw new IllegalArgumentException("End time must be after start time");
 
         Stadium stadium = stadiumRepository.findByIdWithLock(bookingRequest.stadiumId()).orElseThrow(() -> new ResourceNotFoundException("Stadium not found."));
+
+        if (!stadium.isOpenAt(bookingRequest.startTime().toLocalTime(), bookingRequest.endTime().toLocalTime())) {
+            throw new IllegalArgumentException("Stadium is closed during the selected time.");
+        }
 
         boolean hasConflict = bookingRepository.findConflictingBookingsForNew(bookingRequest.stadiumId(), bookingRequest.startTime(), bookingRequest.endTime());
 

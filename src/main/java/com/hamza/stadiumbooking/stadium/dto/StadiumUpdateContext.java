@@ -1,4 +1,4 @@
-package com.hamza.stadiumbooking.stadium;
+package com.hamza.stadiumbooking.stadium.dto;
 
 import java.util.Set;
 

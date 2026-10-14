@@ -1,5 +1,7 @@
 package com.hamza.stadiumbooking.stadium;
 
+import com.hamza.stadiumbooking.stadium.dto.*;
+
 import com.hamza.stadiumbooking.security.utils.OwnershipValidationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

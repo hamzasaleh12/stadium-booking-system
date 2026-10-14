@@ -1,5 +1,7 @@
 package com.hamza.stadiumbooking.booking;
 
+import com.hamza.stadiumbooking.booking.dto.*;
+
 import com.hamza.stadiumbooking.base.AbstractIntegrationTest;
 import com.hamza.stadiumbooking.base.AuthTestUtils;
 import com.hamza.stadiumbooking.security.jwt.JwtProvider;
@@ -232,7 +234,7 @@ public class BookingAuthorizationIT extends AbstractIntegrationTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.validationErrors.msg").value(org.hamcrest.Matchers.containsString("Stadium is closed")));
+                    .andExpect(jsonPath("$.msg").value(org.hamcrest.Matchers.containsString("Stadium is closed")));
         }
 
         @Test

@@ -1,4 +1,4 @@
-package com.hamza.stadiumbooking.booking;
+package com.hamza.stadiumbooking.booking.dto;
 
 import com.hamza.stadiumbooking.stadium.Stadium;
 

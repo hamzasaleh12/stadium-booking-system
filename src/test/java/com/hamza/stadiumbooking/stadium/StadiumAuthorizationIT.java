@@ -1,5 +1,7 @@
 package com.hamza.stadiumbooking.stadium;
 
+import com.hamza.stadiumbooking.stadium.dto.*;
+
 import com.hamza.stadiumbooking.base.AbstractIntegrationTest;
 import com.hamza.stadiumbooking.base.AuthTestUtils;
 import com.hamza.stadiumbooking.user.Role;

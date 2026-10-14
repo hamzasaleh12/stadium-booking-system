@@ -38,7 +38,7 @@ public class RefreshTokenStore {
             redisTemplate.opsForValue().set(key(userId), hash(refreshToken), ttl);
             log.debug("AUTH_REDIS_SESSION_REPLACED userId={} ttlSeconds={}", userId, ttl.toSeconds());
         } catch (RuntimeException exception) {
-            log.error("AUTH_REDIS_SESSION_REPLACE_FAILED userId={} action=fail-closed", userId, exception);
+            log.error("AUTH_REDIS_SESSION_REPLACE_FAILED userId={} action=fail-closed", userId, exception.getMessage());
             throw exception;
         }
     }
@@ -57,7 +57,7 @@ public class RefreshTokenStore {
                     userId, rotated, ttl.toSeconds());
             return rotated;
         } catch (RuntimeException exception) {
-            log.error("AUTH_REDIS_SESSION_ROTATE_FAILED userId={} action=fail-closed", userId, exception);
+            log.error("AUTH_REDIS_SESSION_ROTATE_FAILED userId={} action=fail-closed", userId, exception.getMessage());
             throw exception;
         }
     }
@@ -67,7 +67,11 @@ public class RefreshTokenStore {
             redisTemplate.delete(key(userId));
             log.debug("AUTH_REDIS_SESSION_DELETED userId={}", userId);
         } catch (RuntimeException exception) {
-            log.error("AUTH_REDIS_SESSION_DELETE_FAILED userId={}", userId, exception);
+            log.error(
+                    "AUTH_REDIS_SESSION_DELETE_FAILED userId={} action=fail-closed cause={}",
+                    userId,
+                    exception.getMessage()
+            );
             throw exception;
         }
     }

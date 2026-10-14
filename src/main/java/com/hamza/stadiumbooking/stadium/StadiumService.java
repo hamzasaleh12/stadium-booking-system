@@ -1,5 +1,7 @@
 package com.hamza.stadiumbooking.stadium;
 
+import com.hamza.stadiumbooking.stadium.dto.*;
+
 import com.hamza.stadiumbooking.exception.ResourceNotFoundException;
 import com.hamza.stadiumbooking.user.User;
 import com.hamza.stadiumbooking.user.UserRepository;
@@ -62,6 +64,7 @@ public class StadiumService {
         log.info("Action: addStadium | Attempting to add new stadium: {}", request.name());
 
         Stadium stadium = stadiumMapper.toEntity(request);
+        validateOperatingHours(stadium);
 
         UUID managerId = Objects.requireNonNull(ownershipValidationService.getCurrentUserId(),
                 "Action: addStadium | Security Failure | User must be authenticated to add a stadium");
@@ -114,9 +117,16 @@ public class StadiumService {
 
         StadiumUpdateContext stadiumUpdateContext = new StadiumUpdateContext(request.features() != null ? new HashSet<>(request.features()) : null);
         stadiumMapper.updateStadiumFromRequest(request, stadium, stadiumUpdateContext);
+        validateOperatingHours(stadium);
 
         Stadium savedStadium = stadiumRepository.save(stadium);
         log.info("Action: updateStadium | Success | Stadium ID: {} updated successfully", savedStadium.getId());
         return stadiumMapper.toResponse(savedStadium);
+    }
+
+    private void validateOperatingHours(Stadium stadium) {
+        if (!stadium.isOpenAt(stadium.getOpenTime(), stadium.getCloseTime())) {
+            throw new IllegalArgumentException("Opening and closing times define invalid operating hours.");
+        }
     }
 }

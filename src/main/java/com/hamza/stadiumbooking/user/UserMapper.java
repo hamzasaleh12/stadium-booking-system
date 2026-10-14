@@ -1,5 +1,7 @@
 package com.hamza.stadiumbooking.user;
 
+import com.hamza.stadiumbooking.user.dto.*;
+
 import org.mapstruct.*;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)

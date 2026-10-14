@@ -1,4 +1,4 @@
-package com.hamza.stadiumbooking.user;
+package com.hamza.stadiumbooking.user.dto;
 
 import jakarta.validation.constraints.*;
 
@@ -6,6 +6,7 @@ import java.time.LocalDate;
 
 public record UserRequest(
         @NotBlank(message = "Name is required")
+        @Size(max = 100, message = "Name must not exceed 100 characters")
         String name,
         @NotBlank(message = "Email is required")
         @Email(message = "Invalid email format")
@@ -14,6 +15,7 @@ public record UserRequest(
                 message = "Email must be from a valid provider (Gmail, yahoo, outlook, hotMail)"
         )
         String email,
+        @NotBlank(message = "Phone number is required")
         @Pattern(regexp = "^01[0125][0-9]{8}$", message = "Invalid Phone Number")
         String phoneNumber,
         @NotBlank
@@ -24,6 +26,7 @@ public record UserRequest(
         )
         String password,
         @NotNull
+        @Past(message = "Date of birth must be in the past")
         LocalDate dob
 ) {
 }

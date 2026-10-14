@@ -1,12 +1,14 @@
-package com.hamza.stadiumbooking.user;
+package com.hamza.stadiumbooking.user.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 
 public record UserUpdateRequest(
+        @Size(max = 100, message = "Name must not exceed 100 characters")
         String name,
 
         @Email(message = "Invalid email format")
@@ -25,6 +27,7 @@ public record UserUpdateRequest(
                 message = "Password must contain at least one digit, one lowercase, one uppercase, and one special character."
         )
         String password,
+        @Past(message = "Date of birth must be in the past")
         LocalDate dob
 ) {
 }
