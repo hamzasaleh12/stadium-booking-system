@@ -3,7 +3,7 @@ databaseChangeLog:
   - changeSet:
       id: 20260310-02-seed-admin
       author: hamza
-      context: "local, prod"
+      context: local
       preConditions:
         - onFail: MARK_RAN
         - sqlCheck:
@@ -28,7 +28,7 @@ databaseChangeLog:
   - changeSet:
       id: 20260310-03-seed-manager
       author: hamza
-      context: "local, prod"
+      context: local
       preConditions:
         - onFail: MARK_RAN
         - sqlCheck:
@@ -53,7 +53,7 @@ databaseChangeLog:
   - changeSet:
       id: 20260310-04-seed-player
       author: hamza
-      context: "local, prod"
+      context: local
       preConditions:
         - onFail: MARK_RAN
         - sqlCheck:

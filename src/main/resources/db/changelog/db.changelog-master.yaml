@@ -3,4 +3,7 @@ databaseChangeLog:
       file: db/changelog/changes/20260215205843-initial-schema.yaml
 
   - include:
-            file: db/changelog/changes/20260310-02-seed-users.yaml
+      file: db/changelog/changes/20260310-02-seed-users.yaml
+
+  - include:
+      file: db/changelog/changes/20261014-01-disable-demo-users-in-prod.yaml
