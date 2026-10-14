@@ -1,5 +1,7 @@
 package com.hamza.stadiumbooking.user;
 
+import com.hamza.stadiumbooking.user.dto.*;
+
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 

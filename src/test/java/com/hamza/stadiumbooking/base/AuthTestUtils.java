@@ -1,19 +1,23 @@
 package com.hamza.stadiumbooking.base;
 
+import com.hamza.stadiumbooking.booking.dto.*;
+import com.hamza.stadiumbooking.stadium.dto.*;
+import com.hamza.stadiumbooking.user.dto.*;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hamza.stadiumbooking.booking.Booking;
 import com.hamza.stadiumbooking.booking.BookingRepository;
-import com.hamza.stadiumbooking.booking.BookingRequest;
+import com.hamza.stadiumbooking.booking.dto.BookingRequest;
 import com.hamza.stadiumbooking.booking.BookingStatus;
 import com.hamza.stadiumbooking.security.auth.LoginRequest;
 import com.hamza.stadiumbooking.stadium.Stadium;
 import com.hamza.stadiumbooking.stadium.StadiumRepository;
-import com.hamza.stadiumbooking.stadium.StadiumRequest;
+import com.hamza.stadiumbooking.stadium.dto.StadiumRequest;
 import com.hamza.stadiumbooking.stadium.Type;
 import com.hamza.stadiumbooking.user.Role;
 import com.hamza.stadiumbooking.user.User;
 import com.hamza.stadiumbooking.user.UserRepository;
-import com.hamza.stadiumbooking.user.UserRequest;
+import com.hamza.stadiumbooking.user.dto.UserRequest;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;

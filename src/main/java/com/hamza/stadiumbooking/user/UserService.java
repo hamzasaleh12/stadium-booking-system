@@ -1,5 +1,7 @@
 package com.hamza.stadiumbooking.user;
 
+import com.hamza.stadiumbooking.user.dto.*;
+
 import com.hamza.stadiumbooking.exception.EmailTakenException;
 import com.hamza.stadiumbooking.exception.PhoneNumberTakenException;
 import com.hamza.stadiumbooking.exception.ResourceNotFoundException;

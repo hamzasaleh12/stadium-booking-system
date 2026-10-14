@@ -83,7 +83,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({JWTVerificationException.class, TokenExpiredException.class})
     public ResponseEntity<Object> handleJwtErrors(Exception e) {
-        log.warn("JWT authentication failed", e);
+        log.warn("JWT authentication failed {}", e.getMessage());
         return error("Authentication failed", HttpStatus.UNAUTHORIZED);
     }
 
@@ -180,7 +180,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<Object> handleDataAccess(DataAccessException e) {
-        log.error("Database error: ", e);
+        log.error("Database error: {}", e.getMessage());
         return error("Service temporarily unavailable due to database error.", HttpStatus.SERVICE_UNAVAILABLE);
     }
 
@@ -213,8 +213,7 @@ public class GlobalExceptionHandler {
                 request.getDescription(false),
                 e.getClass().getSimpleName(),
                 rootCause.getClass().getName(),
-                rootCause.getMessage(),
-                e
+                rootCause.getMessage()
         );
 
         return error("An unexpected error occurred. Please try again later or contact support.",

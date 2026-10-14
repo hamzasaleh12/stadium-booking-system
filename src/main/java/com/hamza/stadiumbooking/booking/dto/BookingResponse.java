@@ -1,7 +1,9 @@
-package com.hamza.stadiumbooking.booking;
+package com.hamza.stadiumbooking.booking.dto;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+
+import com.hamza.stadiumbooking.booking.BookingStatus;
 
 public record BookingResponse(
         UUID id,

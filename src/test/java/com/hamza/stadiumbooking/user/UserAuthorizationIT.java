@@ -1,5 +1,7 @@
 package com.hamza.stadiumbooking.user;
 
+import com.hamza.stadiumbooking.user.dto.*;
+
 import com.hamza.stadiumbooking.base.AbstractIntegrationTest;
 import com.hamza.stadiumbooking.base.AuthTestUtils;
 import org.junit.jupiter.api.BeforeEach;

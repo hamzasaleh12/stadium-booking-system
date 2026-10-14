@@ -1,5 +1,6 @@
-package com.hamza.stadiumbooking.user;
+package com.hamza.stadiumbooking.user.dto;
 
+import com.hamza.stadiumbooking.user.Role;
 import java.util.UUID;
 
 public record UserResponse(

@@ -1,5 +1,7 @@
 package com.hamza.stadiumbooking.stadium;
 
+import com.hamza.stadiumbooking.stadium.dto.*;
+
 import com.hamza.stadiumbooking.exception.ResourceNotFoundException;
 import com.hamza.stadiumbooking.user.Role;
 import com.hamza.stadiumbooking.user.User;

@@ -1,6 +1,5 @@
 package com.hamza.stadiumbooking.stadium;
 
-import com.hamza.stadiumbooking.booking.validation.TimeValidationUtils;
 import com.hamza.stadiumbooking.user.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -86,6 +85,15 @@ public class Stadium {
     private LocalDateTime updatedAt;
 
     public boolean isOpenAt(LocalTime start, LocalTime end) {
-        return TimeValidationUtils.isWithinOperatingHours(start ,end ,openTime ,closeTime);
+        if (start == null || end == null || openTime == null || closeTime == null || start.equals(end)) {
+            return false;
+        }
+
+        if (closeTime.isAfter(openTime)) {
+            return !start.isBefore(openTime) && !end.isAfter(closeTime);
+        } else {
+            if (start.isAfter(end)) return !start.isBefore(openTime) && !end.isAfter(closeTime);
+            else return !start.isBefore(openTime) || !end.isAfter(closeTime);
+        }
     }
 }

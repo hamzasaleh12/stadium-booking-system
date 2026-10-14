@@ -1,5 +1,6 @@
-package com.hamza.stadiumbooking.stadium;
+package com.hamza.stadiumbooking.stadium.dto;
 
+import com.hamza.stadiumbooking.stadium.Type;
 import java.time.LocalTime;
 import java.util.Set;
 import java.util.UUID;
