@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20261014-01-disable-demo-users-in-prod
+      author: hamza
+      context: prod
+      changes:
+        - sql:
+            sql: >
+              UPDATE users
+              SET is_deleted = TRUE
+              WHERE email IN ('admin@gmail.com', 'manager@gmail.com', 'player@gmail.com')
+                AND is_deleted = FALSE
